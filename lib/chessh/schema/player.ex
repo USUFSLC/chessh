@@ -9,6 +9,8 @@ defmodule Chessh.Player do
     field(:password, :string, virtual: true)
     field(:hashed_password, :string)
 
+    has_many(:keys, Chessh.Key)
+
     timestamps()
   end
 
@@ -52,7 +54,6 @@ defmodule Chessh.Player do
       message: "only letters, numbers, underscores, and hyphens allowed"
     )
     |> unique_constraint(:username)
-    |> lowercase(:username)
   end
 
   defp validate_password(changeset, opts) do
@@ -73,9 +74,5 @@ defmodule Chessh.Player do
     else
       changeset
     end
-  end
-
-  defp lowercase(changeset, field) do
-    Map.update!(changeset, field, &String.downcase/1)
   end
 end
