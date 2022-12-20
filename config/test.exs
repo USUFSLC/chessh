@@ -6,3 +6,6 @@ config :chessh, Chessh.Repo,
   password: "postgres",
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
+
+config :esshd,
+  priv_dir: Path.join(Path.dirname(__DIR__), "priv/test_keys")

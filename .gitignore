@@ -24,6 +24,3 @@ server-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
-
-# Private files, like configuration secrets or keys.
-/priv/
