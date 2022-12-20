@@ -14,15 +14,15 @@ defmodule Chessh.Player do
     timestamps()
   end
 
-  def registration_changeset(user, attrs, opts \\ []) do
-    user
+  def registration_changeset(player, attrs, opts \\ []) do
+    player
     |> cast(attrs, [:username, :password])
     |> validate_username()
     |> validate_password(opts)
   end
 
-  def password_changeset(user, attrs, opts \\ []) do
-    user
+  def password_changeset(player, attrs, opts \\ []) do
+    player
     |> cast(attrs, [:password])
     |> validate_confirmation(:password, message: "does not match password")
     |> validate_password(opts)

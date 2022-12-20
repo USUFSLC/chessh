@@ -3,12 +3,14 @@ defmodule Chessh.Repo.Migrations.AddKeys do
 
   def change do
     create table(:keys) do
-      add :key, :string, null: false
-      add :name, :string, null: false
+      add(:key, :text, null: false)
+      add(:name, :string, null: false)
 
-      add :player_id, references(:players)
+      add(:player_id, references(:players))
 
       timestamps()
     end
+
+    create(unique_index(:keys, [:player_id, :key]))
   end
 end
