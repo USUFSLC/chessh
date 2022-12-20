@@ -22,6 +22,7 @@ jobs:
         with:
           otp-version: '25'
           elixir-version: '1.14.0'
+      - run: sudo apt install -y libncurses5
       - run: mix deps.get
       - run: mix deps.compile      
       - run: mix test
