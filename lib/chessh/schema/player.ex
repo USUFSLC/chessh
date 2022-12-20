@@ -49,7 +49,7 @@ defmodule Chessh.Player do
   defp validate_username(changeset) do
     changeset
     |> validate_required([:username])
-    |> validate_length(:username, min: 2, max: 12)
+    |> validate_length(:username, min: 2, max: 16)
     |> validate_format(:username, ~r/^[a-zA-Z0-9_\-]*$/,
       message: "only letters, numbers, underscores, and hyphens allowed"
     )

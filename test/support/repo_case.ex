@@ -8,8 +8,6 @@ defmodule Chessh.RepoCase do
       import Ecto
       import Ecto.Query
       import Chessh.RepoCase
-
-      # and any other stuff
     end
   end
 

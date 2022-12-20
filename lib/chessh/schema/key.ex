@@ -32,6 +32,7 @@ defmodule Chessh.Key do
     if is_tuple(key) do
       case key do
         {pub, [opts]} -> [{pub, [opts]}]
+        {pub, []} -> [{pub, [comment: '']}]
         key -> [{key, [comment: '']}]
       end
       |> :ssh_file.encode(:openssh_key)

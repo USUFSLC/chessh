@@ -8,6 +8,8 @@ config :esshd,
   handler: {Chessh.Shell, :on_shell, 4},
   port: 42069,
   password_authenticator: Chessh.Auth.PasswordAuthenticator,
-  public_key_authenticator: Chessh.Auth.KeyAuthenticator
+  public_key_authenticator: Chessh.Auth.KeyAuthenticator,
+  # TODO - benchmark
+  max_sessions: 128
 
 import_config "#{config_env()}.exs"

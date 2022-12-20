@@ -28,7 +28,6 @@ defmodule Chessh.Schema.KeyTest do
   @empty_attrs %{}
 
   test "changeset with valid attributes" do
-    IO.puts(inspect(Key.changeset(%Key{}, @valid_attrs)))
     assert Key.changeset(%Key{}, @valid_attrs).valid?
     assert Key.changeset(%Key{}, @valid_key_attrs).valid?
   end
