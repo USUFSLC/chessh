@@ -17,7 +17,7 @@ defmodule Chessh.MixProject do
   def application do
     [
       mod: {Chessh.Application, []},
-      extra_applications: [:esshd, :logger]
+      extra_applications: [:logger, :crypto, :ssh]
     ]
   end
 
@@ -28,7 +28,6 @@ defmodule Chessh.MixProject do
   defp deps do
     [
       {:chess, "~> 0.4.1"},
-      {:esshd, "~> 0.2.1"},
       {:ecto, "~> 3.9"},
       {:ecto_sql, "~> 3.9"},
       {:postgrex, "~> 0.16.5"},

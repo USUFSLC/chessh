@@ -1,6 +1,5 @@
 defmodule Chessh.Auth.KeyAuthenticator do
   alias Chessh.{Key, Repo}
-  use Sshd.PublicKeyAuthenticator
   import Ecto.Query
 
   def authenticate(username, public_key) do

@@ -7,5 +7,5 @@ config :chessh, Chessh.Repo,
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
 
-config :esshd,
-  priv_dir: Path.join(Path.dirname(__DIR__), "priv/test_keys")
+config :chessh,
+  priv_dir: Path.join(Path.dirname(__DIR__), "priv/keys")
