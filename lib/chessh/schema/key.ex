@@ -16,7 +16,7 @@ defmodule Chessh.Key do
     |> cast(update_encode_key(attrs, :key), [:key])
     |> cast(attrs, [:name])
     |> validate_required([:key, :name])
-    |> validate_format(:key, ~r/[\-\w\d]+ [^ ]+$/, message: "invalid ssh key")
+    |> validate_format(:key, ~r/[\-\w\d]+ [^ ]+$/, message: "invalid public ssh key")
     |> validate_format(:key, ~r/^(?!ssh-dss).+/, message: "DSA keys are not supported")
   end
 
@@ -41,7 +41,6 @@ defmodule Chessh.Key do
     end
     # Remove comment at end of key
     |> String.replace(~r/ [^ ]+\@[^ ]+$/, "")
-    # Remove potential spaces / newline
     |> String.trim()
   end
 end

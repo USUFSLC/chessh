@@ -1,5 +1,8 @@
 import Config
 
+config :hammer,
+  backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
+
 config :chessh, Chessh.Repo,
   database: "chessh-test",
   username: "postgres",
@@ -8,4 +11,4 @@ config :chessh, Chessh.Repo,
   pool: Ecto.Adapters.SQL.Sandbox
 
 config :chessh,
-  priv_dir: Path.join(Path.dirname(__DIR__), "priv/keys")
+  key_dir: Path.join(Path.dirname(__DIR__), "priv/test_keys")

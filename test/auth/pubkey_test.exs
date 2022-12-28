@@ -1,8 +1,6 @@
 defmodule Chessh.Auth.PublicKeyAuthenticatorTest do
   use ExUnit.Case
-  alias Chessh.Key
-  alias Chessh.Repo
-  alias Chessh.Player
+  alias Chessh.{Key, Repo, Player}
 
   @valid_user %{username: "logan", password: "password"}
   @valid_key %{
@@ -10,7 +8,7 @@ defmodule Chessh.Auth.PublicKeyAuthenticatorTest do
     key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/2LOJGGEd/dhFgRxJ5MMv0jJw4s4pA8qmMbZyulN44"
   }
 
-  setup do
+  setup_all do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Chessh.Repo)
 
     {:ok, player} = Repo.insert(Player.registration_changeset(%Player{}, @valid_user))
