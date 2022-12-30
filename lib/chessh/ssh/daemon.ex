@@ -22,24 +22,24 @@ defmodule Chessh.SSH.Daemon do
   end
 
   def pwd_authenticate(username, password, inet) do
-    [jail_timeout_ms, jail_threshold] =
+    [jail_timeout_ms, jail_attempt_threshold] =
       Application.get_env(:chessh, RateLimits)
-      |> Keyword.take([:jail_timeout_ms, :jail_threshold])
+      |> Keyword.take([:jail_timeout_ms, :jail_attempt_threshold])
       |> Keyword.values()
 
     {ip, _port} = inet
     rateId = "failed_password_attempts:#{Enum.join(Tuple.to_list(ip), ".")}"
 
-    case Hammer.check_rate(rateId, jail_timeout_ms, jail_threshold) do
-      {:allow, _count} ->
-        pwd_authenticate(username, password) ||
-          (fn ->
-             Hammer.check_rate_inc(rateId, jail_timeout_ms, jail_threshold, 1)
-             false
-           end).()
+    if pwd_authenticate(username, password) do
+      true
+    else
+      case Hammer.check_rate_inc(rateId, jail_timeout_ms, jail_attempt_threshold, 1) do
+        {:allow, _count} ->
+          false
 
-      {:deny, _limit} ->
-        :disconnect
+        {:deny, _limit} ->
+          :disconnect
+      end
     end
   end
 

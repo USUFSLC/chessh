@@ -2,7 +2,7 @@ import Config
 
 config :chessh, RateLimits,
   jail_timeout_ms: 1000,
-  jail_threshold: 2
+  jail_attempt_threshold: 3
 
 config :chessh, Chessh.Repo,
   database: "chessh-test",

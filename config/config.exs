@@ -8,7 +8,7 @@ config :chessh,
 
 config :chessh, RateLimits,
   jail_timeout_ms: 5 * 60 * 1000,
-  jail_threshold: 15,
+  jail_attempt_threshold: 15,
   max_concurrent_user_sessions: 5
 
 config :hammer,

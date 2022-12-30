@@ -3,17 +3,14 @@ defmodule Chessh.SSH.AuthTest do
   alias Chessh.{Player, Repo, Key}
 
   @localhost '127.0.0.1'
+  @localhost_inet {{127, 0, 0, 1}, 1}
   @key_name "The Gamer Machine"
   @valid_user %{username: "logan", password: "password"}
   @client_test_keys_dir Path.join(Application.compile_env!(:chessh, :key_dir), "client_keys")
   @client_pub_key 'id_ed25519.pub'
 
   setup_all do
-    case Ecto.Adapters.SQL.Sandbox.checkout(Repo) do
-      :ok -> nil
-      {:already, :owner} -> nil
-    end
-
+    Ecto.Adapters.SQL.Sandbox.checkout(Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
 
     {:ok, player} = Repo.insert(Player.registration_changeset(%Player{}, @valid_user))
@@ -30,15 +27,19 @@ defmodule Chessh.SSH.AuthTest do
   end
 
   test "Password attempts are rate limited" do
+    jail_attempt_threshold =
+      Application.get_env(:chessh, RateLimits)
+      |> Keyword.get(:jail_attempt_threshold)
+
     assert :disconnect ==
              Enum.reduce(
-               1..Application.fetch_env!(:chessh, RateLimits, :jail_threshold),
+               0..(jail_attempt_threshold + 1),
                fn _, _ ->
                  Chessh.SSH.Daemon.pwd_authenticate(
-                        @valid_user.username,
-                        'wrong_password',
-                        @localhost
-                      ) do
+                   @valid_user.username,
+                   "wrong_password",
+                   @localhost_inet
+                 )
                end
              )
   end
@@ -75,7 +76,8 @@ defmodule Chessh.SSH.AuthTest do
     assert_receive(:connected_via_public_key, 500)
   end
 
-  test "INTEGRATION - User cannot have more than specified concurrent sessions" do
-    :ok
-  end
+  # TODO
+  #  test "INTEGRATION - User cannot have more than specified concurrent sessions" do
+  #    :ok
+  #  end
 end

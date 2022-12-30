@@ -9,7 +9,8 @@ defmodule Chessh.Auth.PublicKeyAuthenticatorTest do
   }
 
   setup_all do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Chessh.Repo)
+    Ecto.Adapters.SQL.Sandbox.checkout(Repo)
+    Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
 
     {:ok, player} = Repo.insert(Player.registration_changeset(%Player{}, @valid_user))
 
