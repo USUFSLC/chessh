@@ -9,9 +9,16 @@ defmodule Chessh.Player do
     field(:password, :string, virtual: true)
     field(:hashed_password, :string)
 
+    field(:authentications, :integer, default: 0)
+
     has_many(:keys, Chessh.Key)
 
     timestamps()
+  end
+
+  def authentications_changeset(player, attrs) do
+    player
+    |> cast(attrs, [:authentications])
   end
 
   def registration_changeset(player, attrs, opts \\ []) do
