@@ -5,7 +5,7 @@ defmodule Chessh.Node do
 
   @primary_key {:id, :string, []}
   schema "nodes" do
-    field(:last_start, :utc_datetime)
+    field(:last_start, :utc_datetime_usec)
   end
 
   def changeset(node, attrs) do
@@ -18,7 +18,7 @@ defmodule Chessh.Node do
       nil -> %Chessh.Node{id: node_id}
       node -> node
     end
-    |> Chessh.Node.changeset(%{last_start: DateTime.utc_now()})
+    |> changeset(%{last_start: DateTime.utc_now()})
     |> Repo.insert_or_update()
   end
 end

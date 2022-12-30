@@ -1,6 +1,6 @@
 defmodule Chessh.SSH.AuthTest do
-  use ExUnit.Case
-  alias Chessh.{Player, Repo, Key}
+  use ExUnit.Case, async: false
+  alias(Chessh.{Player, Repo, Key, PlayerSession})
 
   @localhost '127.0.0.1'
   @localhost_inet {{127, 0, 0, 1}, 1}
@@ -26,6 +26,14 @@ defmodule Chessh.SSH.AuthTest do
     :ok
   end
 
+  def cleanup() do
+    Process.sleep(1_000)
+    PlayerSession.delete_all_on_node(System.fetch_env!("NODE_ID"))
+
+    # Wait for (what I believe to be the) DB Connection queue to clear?
+    Process.sleep(1_000)
+  end
+
   test "Password attempts are rate limited" do
     jail_attempt_threshold =
       Application.get_env(:chessh, RateLimits)
@@ -49,7 +57,7 @@ defmodule Chessh.SSH.AuthTest do
     test_pid = self()
 
     Task.Supervisor.start_child(sup, fn ->
-      {:ok, _pid} =
+      {:ok, conn} =
         :ssh.connect(@localhost, Application.fetch_env!(:chessh, :port),
           user: String.to_charlist(@valid_user.username),
           password: String.to_charlist(@valid_user.password),
@@ -57,11 +65,12 @@ defmodule Chessh.SSH.AuthTest do
           silently_accept_hosts: true
         )
 
+      :ssh.close(conn)
       send(test_pid, :connected_via_password)
     end)
 
     Task.Supervisor.start_child(sup, fn ->
-      {:ok, _pid} =
+      {:ok, conn} =
         :ssh.connect(@localhost, Application.fetch_env!(:chessh, :port),
           user: String.to_charlist(@valid_user.username),
           auth_methods: 'publickey',
@@ -69,15 +78,61 @@ defmodule Chessh.SSH.AuthTest do
           user_dir: String.to_charlist(@client_test_keys_dir)
         )
 
+      :ssh.close(conn)
       send(test_pid, :connected_via_public_key)
     end)
 
-    assert_receive(:connected_via_password, 1000)
-    assert_receive(:connected_via_public_key, 1000)
+    assert_receive(:connected_via_password, 2_000)
+    assert_receive(:connected_via_public_key, 2_000)
+
+    cleanup()
   end
 
-  # TODO
-  #  test "INTEGRATION - User cannot have more than specified concurrent sessions" do
-  #    :ok
-  #  end
+  test "INTEGRATION - Player cannot have more than specified concurrent sessions" do
+    max_concurrent_user_sessions =
+      Application.get_env(:chessh, RateLimits)
+      |> Keyword.get(:max_concurrent_user_sessions)
+
+    player = Repo.get_by(Player, username: @valid_user.username)
+
+    {:ok, sup} = Task.Supervisor.start_link()
+    test_pid = self()
+
+    Enum.reduce(0..(max_concurrent_user_sessions + 1), fn i, _ ->
+      Task.Supervisor.start_child(sup, fn ->
+        case :ssh.connect(@localhost, Application.fetch_env!(:chessh, :port),
+               user: String.to_charlist(@valid_user.username),
+               password: String.to_charlist(@valid_user.password),
+               auth_methods: if(rem(i, 2) == 0, do: 'publickey', else: 'password'),
+               silently_accept_hosts: true,
+               user_dir: String.to_charlist(@client_test_keys_dir)
+             ) do
+          {:ok, conn} ->
+            send(
+              test_pid,
+              {:attempted, {:ok, conn}}
+            )
+
+          x ->
+            send(test_pid, {:attempted, x})
+        end
+      end)
+    end)
+
+    Enum.reduce(0..max_concurrent_user_sessions, fn _, _ ->
+      assert_receive({:attempted, {:ok, _conn}}, 2000)
+    end)
+
+    assert_receive(
+      {:attempted, {:error, 'Unable to connect using the available authentication methods'}},
+      2000
+    )
+
+    # Give it time to send back the disconnection payload after session was opened
+    # but over threshold
+    :timer.sleep(100)
+    assert PlayerSession.concurrent_sessions(player) == max_concurrent_user_sessions
+
+    cleanup()
+  end
 end

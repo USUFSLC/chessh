@@ -8,7 +8,7 @@ defmodule Chessh.Auth.PasswordAuthenticatorTest do
     Ecto.Adapters.SQL.Sandbox.checkout(Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
 
-    {:ok, _user} = Repo.insert(Player.registration_changeset(%Player{}, @valid_user))
+    {:ok, _player} = Repo.insert(Player.registration_changeset(%Player{}, @valid_user))
 
     :ok
   end
@@ -22,6 +22,15 @@ defmodule Chessh.Auth.PasswordAuthenticatorTest do
     refute Chessh.Auth.PasswordAuthenticator.authenticate(
              @valid_user.username,
              "a_bad_password"
+           )
+  end
+
+  test "Password can authenticate a user instance" do
+    player = Repo.get_by(Player, username: "logan")
+
+    assert Chessh.Auth.PasswordAuthenticator.authenticate(
+             player,
+             @valid_user.password
            )
   end
 end
