@@ -72,8 +72,8 @@ defmodule Chessh.SSH.AuthTest do
       send(test_pid, :connected_via_public_key)
     end)
 
-    assert_receive(:connected_via_password, 500)
-    assert_receive(:connected_via_public_key, 500)
+    assert_receive(:connected_via_password, 1000)
+    assert_receive(:connected_via_public_key, 1000)
   end
 
   # TODO
