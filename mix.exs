@@ -31,7 +31,8 @@ defmodule Chessh.MixProject do
       {:ecto, "~> 3.9"},
       {:ecto_sql, "~> 3.9"},
       {:postgrex, "~> 0.16.5"},
-      {:bcrypt_elixir, "~> 3.0"}
+      {:bcrypt_elixir, "~> 3.0"},
+      {:hammer, "~> 6.1"}
     ]
   end
 

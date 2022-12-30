@@ -1,8 +1,7 @@
 defmodule Chessh.Auth.UserRegistrationTest do
   use Chessh.RepoCase
   use ExUnit.Case
-  alias Chessh.Player
-  alias Chessh.Repo
+  alias Chessh.{Player, Repo}
 
   @valid_user %{username: "logan", password: "password"}
   @invalid_username %{username: "a", password: "password"}

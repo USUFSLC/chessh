@@ -1,5 +1,9 @@
 import Config
 
+config :chessh, RateLimits,
+  jail_timeout_ms: 5000,
+  jail_attempt_threshold: 3
+
 config :chessh, Chessh.Repo,
   database: "chessh-test",
   username: "postgres",
@@ -8,4 +12,4 @@ config :chessh, Chessh.Repo,
   pool: Ecto.Adapters.SQL.Sandbox
 
 config :chessh,
-  priv_dir: Path.join(Path.dirname(__DIR__), "priv/keys")
+  key_dir: Path.join(Path.dirname(__DIR__), "priv/test_keys")
