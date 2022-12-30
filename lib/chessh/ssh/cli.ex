@@ -1,7 +1,7 @@
 defmodule Chessh.SSH.Cli do
   @behaviour :ssh_server_channel
 
-  def init() do
+  def init(_args) do
     {:ok, %{}}
   end
 

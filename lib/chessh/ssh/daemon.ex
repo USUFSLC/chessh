@@ -1,5 +1,5 @@
 defmodule Chessh.SSH.Daemon do
-  alias Chessh.{Repo, PlayerSession, Player, Utils}
+  alias Chessh.{Repo, PlayerSession, Utils}
   alias Chessh.Auth.PasswordAuthenticator
   use GenServer
   import Ecto.Query

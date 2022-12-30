@@ -8,7 +8,6 @@ defmodule Chessh.Auth.PasswordAuthenticator do
   def authenticate(username, password) do
     case Repo.get_by(Player, username: username) do
       player -> authenticate(player, password)
-      nil -> false
     end
   end
 end
