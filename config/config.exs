@@ -11,6 +11,7 @@ config :chessh, RateLimits,
   jail_attempt_threshold: 15,
   max_concurrent_user_sessions: 5
 
+# This will be redis when scaled across multiple nodes
 config :hammer,
   backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
 
