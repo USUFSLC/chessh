@@ -1,7 +1,7 @@
 import Config
 
 config :chessh, RateLimits,
-  jail_timeout_ms: 1000,
+  jail_timeout_ms: 5000,
   jail_attempt_threshold: 3
 
 config :chessh, Chessh.Repo,
