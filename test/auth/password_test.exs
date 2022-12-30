@@ -14,13 +14,13 @@ defmodule Chessh.Auth.PasswordAuthenticatorTest do
 
   test "Password can authenticate a hashed password" do
     assert Chessh.Auth.PasswordAuthenticator.authenticate(
-             String.to_charlist(@valid_user.username),
-             String.to_charlist(@valid_user.password)
+             @valid_user.username,
+             @valid_user.password
            )
 
     refute Chessh.Auth.PasswordAuthenticator.authenticate(
-             String.to_charlist(@valid_user.username),
-             String.to_charlist("a_bad_password")
+             @valid_user.username,
+             "a_bad_password"
            )
   end
 end

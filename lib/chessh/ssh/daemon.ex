@@ -1,4 +1,5 @@
 defmodule Chessh.SSH.Daemon do
+  alias Chessh.Auth.PasswordAuthenticator
   use GenServer
 
   def start_link(_) do
@@ -12,23 +13,38 @@ defmodule Chessh.SSH.Daemon do
     {:ok, state}
   end
 
-  def pwd_authenticate(username, password, _address, attempts) do
-    if Chessh.Auth.PasswordAuthenticator.authenticate(username, password) do
-      true
-    else
-      newAttempts =
-        case attempts do
-          :undefined -> 0
-          _ -> attempts
-        end
+  def pwd_authenticate(username, password) do
+    # TODO - check concurrent sessions
+    PasswordAuthenticator.authenticate(
+      String.Chars.to_string(username),
+      String.Chars.to_string(password)
+    )
+  end
 
-      if Application.fetch_env!(:chessh, :max_password_attempts) <= newAttempts do
+  def pwd_authenticate(username, password, inet) do
+    [jail_timeout_ms, jail_threshold] =
+      Application.get_env(:chessh, RateLimits)
+      |> Keyword.take([:jail_timeout_ms, :jail_threshold])
+      |> Keyword.values()
+
+    {ip, _port} = inet
+    rateId = "failed_password_attempts:#{Enum.join(Tuple.to_list(ip), ".")}"
+
+    case Hammer.check_rate(rateId, jail_timeout_ms, jail_threshold) do
+      {:allow, _count} ->
+        pwd_authenticate(username, password) ||
+          (fn ->
+             Hammer.check_rate_inc(rateId, jail_timeout_ms, jail_threshold, 1)
+             false
+           end).()
+
+      {:deny, _limit} ->
         :disconnect
-      else
-        {false, newAttempts + 1}
-      end
     end
   end
+
+  def pwd_authenticate(username, password, inet, _address),
+    do: pwd_authenticate(username, password, inet)
 
   def handle_cast(:start, state) do
     port = Application.fetch_env!(:chessh, :port)
@@ -40,6 +56,7 @@ defmodule Chessh.SSH.Daemon do
            system_dir: key_dir,
            pwdfun: &pwd_authenticate/4,
            key_cb: Chessh.SSH.ServerKey,
+           #          disconnectfun: 
            id_string: :random,
            subsystems: [],
            parallel_login: true,

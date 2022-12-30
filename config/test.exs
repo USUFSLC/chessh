@@ -1,7 +1,8 @@
 import Config
 
-config :hammer,
-  backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
+config :chessh, RateLimits,
+  jail_timeout_ms: 1000,
+  jail_threshold: 2
 
 config :chessh, Chessh.Repo,
   database: "chessh-test",
