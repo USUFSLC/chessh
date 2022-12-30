@@ -5,22 +5,22 @@ defmodule Chessh.SSH.Cli do
     {:ok, %{}}
   end
 
-  def handle_msg(message, state) do
-    {:ok, state}
-  end
-
-  def handle_ssh_msg(message, state) do
+  def handle_msg(_message, state) do
     {:ok, state}
   end
 
   def handle_ssh_msg(
-        {:ssh_cm, _connection_handler, {:exit_signal, channel_id, signal, err, lang}},
+        {:ssh_cm, _connection_handler, {:exit_signal, channel_id, _signal, _err, _lang}},
         state
       ) do
     {:stop, channel_id, state}
   end
 
-  def terminate(reason, state) do
+  def handle_ssh_msg(_message, state) do
+    {:ok, state}
+  end
+
+  def terminate(_reason, _state) do
     :ok
   end
 end
