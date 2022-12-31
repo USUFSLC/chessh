@@ -34,7 +34,7 @@ defmodule Chessh.PlayerSession do
     )
   end
 
-  def player_within_concurrent_sessions_and_satisfies(username, auth_fn) do
+  def update_sessions_and_player_satisfies(username, auth_fn) do
     max_sessions =
       Application.get_env(:chessh, RateLimits)
       |> Keyword.get(:max_concurrent_user_sessions)
@@ -51,9 +51,7 @@ defmodule Chessh.PlayerSession do
           send(self(), {:authed, false})
 
         player ->
-          authed =
-            auth_fn.(player) &&
-              PlayerSession.concurrent_sessions(player) < max_sessions
+          authed = auth_fn.(player)
 
           if authed do
             Logger.debug(
@@ -66,6 +64,29 @@ defmodule Chessh.PlayerSession do
               player: player,
               process: Utils.pid_to_str(self())
             })
+
+            concurrent_sessions = PlayerSession.concurrent_sessions(player)
+
+            if concurrent_sessions > max_sessions do
+              expired_sessions =
+                Repo.all(
+                  from(p in PlayerSession,
+                    select: p.id,
+                    order_by: [asc: :login],
+                    limit: ^(concurrent_sessions - max_sessions)
+                  )
+                )
+
+              Logger.debug(
+                "Player #{player.username} has #{length(expired_sessions)} expired sessions - attempting to close them"
+              )
+
+              Enum.map(expired_sessions, fn session_id ->
+                :syn.publish(:player_sessions, {:session, session_id}, :session_closed)
+              end)
+
+              Repo.delete_all(from(p in PlayerSession, where: p.id in ^expired_sessions))
+            end
 
             player
             |> Player.authentications_changeset(%{authentications: player.authentications + 1})

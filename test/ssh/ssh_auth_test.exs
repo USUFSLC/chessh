@@ -43,7 +43,8 @@ defmodule Chessh.SSH.AuthTest do
          password: String.to_charlist(@valid_user.password),
          auth_methods: auth_method,
          silently_accept_hosts: true,
-         user_dir: String.to_charlist(@client_test_keys_dir)
+         user_dir: String.to_charlist(@client_test_keys_dir),
+         disconnectfun: fn _reason -> send(parent, {:disconnected, self()}) end
        )}
     )
   end
@@ -66,6 +67,20 @@ defmodule Chessh.SSH.AuthTest do
              )
   end
 
+  test "Player authentications are increased after a successful authentication" do
+    player_before = Repo.get_by(Player, username: @valid_user.username)
+
+    Chessh.SSH.Daemon.pwd_authenticate(
+      @valid_user.username,
+      @valid_user.password,
+      @localhost_inet
+    )
+
+    player_after = Repo.get_by(Player, username: @valid_user.username)
+
+    assert(player_after.authentications - player_before.authentications == 1)
+  end
+
   test "INTEGRATION - Can ssh into daemon with password or public key" do
     {:ok, sup} = Task.Supervisor.start_link()
     test_pid = self()
@@ -83,6 +98,8 @@ defmodule Chessh.SSH.AuthTest do
       send(test_pid, :connected_via_password)
     end)
 
+    assert_receive(:connected_via_password, 2_000)
+
     Task.Supervisor.start_child(sup, fn ->
       {:ok, conn} =
         :ssh.connect(@localhost, Application.fetch_env!(:chessh, :port),
@@ -96,13 +113,12 @@ defmodule Chessh.SSH.AuthTest do
       send(test_pid, :connected_via_public_key)
     end)
 
-    assert_receive(:connected_via_password, 2_000)
     assert_receive(:connected_via_public_key, 2_000)
 
     cleanup()
   end
 
-  test "INTEGRATION - Player cannot have more than specified concurrent sessions which are tracked by successful authentications and disconnections" do
+  test "INTEGRATION - SSH Sessions are closed once player has more than specified concurrent sessions which are tracked by successful authentications and disconnections" do
     max_concurrent_user_sessions =
       Application.get_env(:chessh, RateLimits)
       |> Keyword.get(:max_concurrent_user_sessions)
@@ -130,10 +146,7 @@ defmodule Chessh.SSH.AuthTest do
         conn
       end)
 
-    assert_receive(
-      {:attempted, {:error, 'Unable to connect using the available authentication methods'}},
-      2000
-    )
+    assert_receive({:disconnected, _conn}, 2_000)
 
     # Give it time to send back the disconnection payload after session was opened
     # but over threshold

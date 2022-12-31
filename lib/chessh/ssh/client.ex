@@ -1,16 +1,27 @@
 defmodule Chessh.SSH.Client do
-  alias Chessh.SSH.Client
+  alias IO.ANSI
   require Logger
 
   use GenServer
 
-  # TODO: tui_state_stack is like [:menu, :player_settings, :change_password] or [:menu, {:game, game_id}, {:game_chat, game_id}]
+  @default_message [
+    ANSI.clear(),
+    ANSI.reset(),
+    ANSI.home(),
+    ["Hello, world"]
+  ]
 
-  defstruct [:tui_pid, :width, :height, :player_id, :tui_state_stack]
+  defmodule State do
+    defstruct tui_pid: nil,
+              width: nil,
+              height: nil,
+              player_session: nil,
+              state_statck: []
+  end
 
   @impl true
-  def init([tui_pid, width, height] = args) do
-    Logger.debug("#{inspect(args)}")
-    {:ok, %Client{tui_pid: tui_pid, width: width, height: height}}
+  def init([%State{tui_pid: tui_pid} = state]) do
+    send(tui_pid, {:send_data, @default_message})
+    {:ok, state}
   end
 end

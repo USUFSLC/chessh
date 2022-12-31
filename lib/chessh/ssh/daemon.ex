@@ -1,6 +1,8 @@
 defmodule Chessh.SSH.Daemon do
   alias Chessh.{Repo, PlayerSession, Utils}
   alias Chessh.Auth.PasswordAuthenticator
+  alias Chessh.SSH.{ServerKey, Tui}
+
   use GenServer
   import Ecto.Query
 
@@ -30,24 +32,30 @@ defmodule Chessh.SSH.Daemon do
            String.Chars.to_string(password)
          ) do
       false ->
+        Logger.debug(
+          "#{username} on bucket #{rateId} got their password wrong, or they don't exist! Point at them and laugh!!!!"
+        )
+
         case Hammer.check_rate_inc(rateId, jail_timeout_ms, jail_attempt_threshold, 1) do
           {:allow, _count} ->
+            Logger.debug("Bucket #{rateId} can continue to brute force though")
             false
 
           {:deny, _limit} ->
+            Logger.debug("Bucket #{rateId} ran out of password attempts")
             :disconnect
         end
 
       x ->
-        if PlayerSession.player_within_concurrent_sessions_and_satisfies(username, fn _player ->
-             x
-           end),
-           do: true,
-           else: :disconnect
+        PlayerSession.update_sessions_and_player_satisfies(username, fn _player ->
+          x
+        end)
+
+        x
     end
   end
 
-  def pwd_authenticate(username, password, inet, _address),
+  def pwd_authenticate(username, password, inet, _state),
     do: pwd_authenticate(username, password, inet)
 
   def handle_cast(:start, state) do
@@ -57,19 +65,19 @@ defmodule Chessh.SSH.Daemon do
 
     case :ssh.daemon(
            port,
-           # shell: fn _username, _peer -> Process.sleep(5000) end,
            system_dir: key_dir,
            pwdfun: &pwd_authenticate/4,
-           key_cb: Chessh.SSH.ServerKey,
-           ssh_cli: {Chessh.SSH.Tui, []},
-           #           connectfun: &on_connect/3,
+           key_cb: ServerKey,
+           ssh_cli: {Tui, [%Tui.State{}]},
            disconnectfun: &on_disconnect/1,
            id_string: :random,
-           subsystems: [],
            parallel_login: true,
-           max_sessions: max_sessions
+           max_sessions: max_sessions,
+           subsystems: []
          ) do
       {:ok, pid} ->
+        Logger.info("SSH server started on port #{port}, on #{inspect(pid)}")
+
         Process.link(pid)
         {:noreply, %{state | pid: pid}, :hibernate}
 

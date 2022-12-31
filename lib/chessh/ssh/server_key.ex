@@ -5,9 +5,9 @@ defmodule Chessh.SSH.ServerKey do
   @behaviour :ssh_server_key_api
 
   def is_auth_key(key, username, _daemon_options) do
-    PlayerSession.player_within_concurrent_sessions_and_satisfies(
+    PlayerSession.update_sessions_and_player_satisfies(
       username,
-      &KeyAuthenticator.authenticate(&1, key)
+      fn player -> KeyAuthenticator.authenticate(player, key) end
     )
   end
 

@@ -1,45 +1,90 @@
 defmodule Chessh.SSH.Tui do
+  alias Chessh.{Repo, PlayerSession, Utils, Player}
+  alias Chessh.SSH.Client
+
+  alias IO.ANSI
+
   require Logger
 
   @behaviour :ssh_server_channel
+  @session_closed_message [
+    ANSI.clear(),
+    ["This session has been closed"]
+  ]
 
-  def init(opts) do
-    Logger.debug("#{inspect(opts)}")
-
-    {:ok,
-     %{
-       channel: nil,
-       cm: nil,
-       pty: %{term: nil, width: nil, height: nil, pixwidth: nil, pixheight: nil, modes: nil},
-       shell: false,
-       client_pid: nil
-     }}
+  defmodule State do
+    defstruct channel_id: nil,
+              width: nil,
+              height: nil,
+              client_pid: nil,
+              connection_ref: nil,
+              player_session: nil
   end
 
-  @spec handle_msg(any, any) ::
-          :ok
-          | {:ok, atom | %{:channel => any, :cm => any, optional(any) => any}}
-          | {:stop, any, %{:channel => any, :client_pid => any, optional(any) => any}}
-  def handle_msg({:ssh_channel_up, channel_id, connection_handler}, state) do
-    Logger.debug(
-      "SSH CHANNEL UP #{inspect(connection_handler)} #{inspect(:ssh.connection_info(connection_handler))}"
-    )
+  def init([%State{} = init_state]) do
+    :syn.add_node_to_scopes([:player_sessions])
+    {:ok, init_state}
+  end
 
-    {:ok, %{state | channel: channel_id, cm: connection_handler}}
+  def handle_msg({:ssh_channel_up, channel_id, connection_ref}, state) do
+    Logger.debug("SSH channel up #{inspect(:ssh.connection_info(connection_ref))}")
+
+    connected_player =
+      :ssh.connection_info(connection_ref)
+      |> Keyword.fetch!(:user)
+      |> String.Chars.to_string()
+
+    case Repo.get_by(Player, username: connected_player) do
+      nil ->
+        Logger.error("Killing channel #{channel_id} - auth'd user does not exist")
+        {:stop, channel_id, state}
+
+      player ->
+        case Repo.get_by(PlayerSession,
+               node_id: System.fetch_env!("NODE_ID"),
+               process: Utils.pid_to_str(connection_ref),
+               player_id: player.id
+             ) do
+          nil ->
+            Logger.error("Killing channel #{channel_id} - session does not exist")
+            {:stop, channel_id, state}
+
+          session ->
+            Logger.debug("Subscribing to session #{session.id}")
+            :syn.join(:player_sessions, {:session, session.id}, self())
+
+            {:ok,
+             %{
+               state
+               | channel_id: channel_id,
+                 connection_ref: connection_ref,
+                 player_session: session
+             }}
+        end
+    end
   end
 
   def handle_msg({:EXIT, client_pid, _reason}, %{client_pid: client_pid} = state) do
     {:stop, state.channel, state}
   end
 
-  ### commands we expect from the client ###
-  def handle_msg({:send_data, data}, state) do
-    Logger.debug("DATA SENT #{inspect(data)}")
-    :ssh_connection.send(state.cm, state.channel, data)
+  def handle_msg(
+        {:send_data, data},
+        %{connection_ref: connection_ref, channel_id: channel_id} = state
+      ) do
+    Logger.debug("Data was sent to TUI process #{inspect(data)}")
+    :ssh_connection.send(connection_ref, channel_id, data)
     {:ok, state}
   end
 
-  ### catch all for what we haven't seen ###
+  def handle_msg(
+        :session_closed,
+        %{connection_ref: connection_ref, channel_id: channel_id} = state
+      ) do
+    :ssh_connection.send(connection_ref, channel_id, @session_closed_message)
+    {:stop, channel_id, state}
+  end
+
   def handle_msg(msg, term) do
     Logger.debug("Unknown msg #{inspect(msg)}, #{inspect(term)}")
   end
@@ -49,28 +94,23 @@ defmodule Chessh.SSH.Tui do
         state
       ) do
     Logger.debug("DATA #{inspect(data)}")
-    send(state.client_pid, {:data, data})
+    #    send(state.client_pid, {:data, data})
     {:ok, state}
   end
 
   def handle_ssh_msg(
         {:ssh_cm, connection_handler,
-         {:pty, channel_id, want_reply?, {term, width, height, pixwidth, pixheight, modes} = _pty}},
+         {:pty, channel_id, want_reply?, {_term, width, height, _pixwidth, _pixheight, _opts}}},
         state
       ) do
+    Logger.debug("#{inspect(state.player_session)} has requested a PTY")
     :ssh_connection.reply_request(connection_handler, want_reply?, :success, channel_id)
 
     {:ok,
      %{
        state
-       | pty: %{
-           term: term,
-           width: width,
-           height: height,
-           pixwidth: pixwidth,
-           pixheight: pixheight,
-           modes: modes
-         }
+       | width: width,
+         height: height
      }}
   end
 
@@ -85,35 +125,37 @@ defmodule Chessh.SSH.Tui do
 
   def handle_ssh_msg(
         {:ssh_cm, _connection_handler,
-         {:window_change, _channel_id, width, height, pixwidth, pixheight}},
+         {:window_change, _channel_id, width, height, _pixwidth, _pixheight}},
         state
       ) do
     Logger.debug("WINDOW CHANGE")
-    #    SSHnakes.Client.resize(state.client_pid, width, height)
-
+    #    Chessh.SSH.Client.resize(state.client_pid, width, height)
     {:ok,
      %{
        state
-       | pty: %{
-           state.pty
-           | width: width,
-             height: height,
-             pixwidth: pixwidth,
-             pixheight: pixheight
-         }
+       | width: width,
+         height: height
      }}
   end
 
   def handle_ssh_msg(
         {:ssh_cm, connection_handler, {:shell, channel_id, want_reply?}},
-        state
+        %{width: width, height: height, player_session: player_session} = state
       ) do
+    Logger.debug("Session #{player_session.id} requested shell")
     :ssh_connection.reply_request(connection_handler, want_reply?, :success, channel_id)
 
     {:ok, client_pid} =
-      GenServer.start_link(Chessh.SSH.Client, [self(), state.pty.width, state.pty.height])
+      GenServer.start_link(Client, [
+        %Client.State{
+          tui_pid: self(),
+          width: width,
+          player_session: player_session,
+          height: height
+        }
+      ])
 
-    {:ok, %{state | client_pid: client_pid, shell: true}}
+    {:ok, %{state | client_pid: client_pid}}
   end
 
   def handle_ssh_msg(
@@ -154,6 +196,14 @@ defmodule Chessh.SSH.Tui do
         state
       ) do
     Logger.debug("EXIT STATUS #{status}")
+    {:stop, channel_id, state}
+  end
+
+  def handle_ssh_msg(
+        msg,
+        %{channel_id: channel_id} = state
+      ) do
+    Logger.debug("UNKOWN MESSAGE #{inspect(msg)}")
     {:stop, channel_id, state}
   end
 
