@@ -61,7 +61,7 @@ defmodule Chessh.SSH.Daemon do
            system_dir: key_dir,
            pwdfun: &pwd_authenticate/4,
            key_cb: Chessh.SSH.ServerKey,
-           ssh_cli: {Chessh.SSH.Cli, []},
+           ssh_cli: {Chessh.SSH.Tui, []},
            #           connectfun: &on_connect/3,
            disconnectfun: &on_disconnect/1,
            id_string: :random,
@@ -81,23 +81,6 @@ defmodule Chessh.SSH.Daemon do
   end
 
   def handle_info(_, state), do: {:noreply, state}
-
-  #  defp on_connect(username, _inet, _method) do
-  #    Logger.debug("#{inspect(self())} connected and is authenticated as #{username}")
-  #
-  #    case Repo.get_by(Player, username: String.Chars.to_string(username)) do
-  #      nil ->
-  #        nil
-  #
-  #      player ->
-  #        Repo.insert(%PlayerSession{
-  #          login: DateTime.utc_now(),
-  #          node_id: System.fetch_env!("NODE_ID"),
-  #          player: player,
-  #          process: pid_to_str(self())
-  #        })
-  #    end
-  #  end
 
   defp on_disconnect(_reason) do
     Logger.debug("#{inspect(self())} disconnected")

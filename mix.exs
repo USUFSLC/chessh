@@ -38,7 +38,7 @@ defmodule Chessh.MixProject do
 
   defp aliases do
     [
-      test: ["ecto.create --quiet", "ecto.migrate", "test"]
+      test: ["ecto.create --quiet", "ecto.migrate", "test --seed 0"]
     ]
   end
 end

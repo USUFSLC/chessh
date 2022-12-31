@@ -34,6 +34,20 @@ defmodule Chessh.SSH.AuthTest do
     Process.sleep(1_000)
   end
 
+  def send_ssh_connection_to_pid(parent, auth_method) do
+    send(
+      parent,
+      {:attempted,
+       :ssh.connect(@localhost, Application.fetch_env!(:chessh, :port),
+         user: String.to_charlist(@valid_user.username),
+         password: String.to_charlist(@valid_user.password),
+         auth_methods: auth_method,
+         silently_accept_hosts: true,
+         user_dir: String.to_charlist(@client_test_keys_dir)
+       )}
+    )
+  end
+
   test "Password attempts are rate limited" do
     jail_attempt_threshold =
       Application.get_env(:chessh, RateLimits)
@@ -88,7 +102,7 @@ defmodule Chessh.SSH.AuthTest do
     cleanup()
   end
 
-  test "INTEGRATION - Player cannot have more than specified concurrent sessions" do
+  test "INTEGRATION - Player cannot have more than specified concurrent sessions which are tracked by successful authentications and disconnections" do
     max_concurrent_user_sessions =
       Application.get_env(:chessh, RateLimits)
       |> Keyword.get(:max_concurrent_user_sessions)
@@ -99,29 +113,22 @@ defmodule Chessh.SSH.AuthTest do
     test_pid = self()
 
     Enum.reduce(0..(max_concurrent_user_sessions + 1), fn i, _ ->
-      Task.Supervisor.start_child(sup, fn ->
-        case :ssh.connect(@localhost, Application.fetch_env!(:chessh, :port),
-               user: String.to_charlist(@valid_user.username),
-               password: String.to_charlist(@valid_user.password),
-               auth_methods: if(rem(i, 2) == 0, do: 'publickey', else: 'password'),
-               silently_accept_hosts: true,
-               user_dir: String.to_charlist(@client_test_keys_dir)
-             ) do
-          {:ok, conn} ->
-            send(
-              test_pid,
-              {:attempted, {:ok, conn}}
-            )
-
-          x ->
-            send(test_pid, {:attempted, x})
+      Task.Supervisor.start_child(
+        sup,
+        fn ->
+          send_ssh_connection_to_pid(
+            test_pid,
+            if(rem(i, 2) == 0, do: 'publickey', else: 'password')
+          )
         end
-      end)
+      )
     end)
 
-    Enum.reduce(0..max_concurrent_user_sessions, fn _, _ ->
-      assert_receive({:attempted, {:ok, _conn}}, 2000)
-    end)
+    conns =
+      Enum.map(1..max_concurrent_user_sessions, fn _ ->
+        assert_receive({:attempted, {:ok, conn}}, 2_000)
+        conn
+      end)
 
     assert_receive(
       {:attempted, {:error, 'Unable to connect using the available authentication methods'}},
@@ -132,6 +139,10 @@ defmodule Chessh.SSH.AuthTest do
     # but over threshold
     :timer.sleep(100)
     assert PlayerSession.concurrent_sessions(player) == max_concurrent_user_sessions
+
+    Enum.map(conns, fn conn -> :ssh.close(conn) end)
+    :timer.sleep(100)
+    assert PlayerSession.concurrent_sessions(player) == 0
 
     cleanup()
   end

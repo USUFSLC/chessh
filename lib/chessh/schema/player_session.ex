@@ -55,17 +55,22 @@ defmodule Chessh.PlayerSession do
             auth_fn.(player) &&
               PlayerSession.concurrent_sessions(player) < max_sessions
 
-          Repo.insert(%PlayerSession{
-            login: DateTime.utc_now(),
-            node_id: System.fetch_env!("NODE_ID"),
-            player: player,
-            # TODO: This PID may be wrong - need to determine if this PID is shared with disconnectfun
-            process: Utils.pid_to_str(self())
-          })
+          if authed do
+            Logger.debug(
+              "Creating session for player #{username} on node #{System.fetch_env!("NODE_ID")} with process #{inspect(self())}"
+            )
 
-          player
-          |> Player.authentications_changeset(%{authentications: player.authentications + 1})
-          |> Repo.update()
+            Repo.insert(%PlayerSession{
+              login: DateTime.utc_now(),
+              node_id: System.fetch_env!("NODE_ID"),
+              player: player,
+              process: Utils.pid_to_str(self())
+            })
+
+            player
+            |> Player.authentications_changeset(%{authentications: player.authentications + 1})
+            |> Repo.update()
+          end
 
           send(self(), {:authed, authed})
       end
