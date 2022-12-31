@@ -65,6 +65,8 @@ defmodule Chessh.SSH.AuthTest do
                  )
                end
              )
+
+    cleanup()
   end
 
   test "Player authentications are increased after a successful authentication" do
@@ -79,6 +81,7 @@ defmodule Chessh.SSH.AuthTest do
     player_after = Repo.get_by(Player, username: @valid_user.username)
 
     assert(player_after.authentications - player_before.authentications == 1)
+    cleanup()
   end
 
   test "INTEGRATION - Can ssh into daemon with password or public key" do
