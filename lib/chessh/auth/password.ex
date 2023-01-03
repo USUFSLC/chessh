@@ -5,6 +5,8 @@ defmodule Chessh.Auth.PasswordAuthenticator do
     Player.valid_password?(player, password)
   end
 
+  def authenticate(username, _password) when is_nil(username), do: false
+
   def authenticate(username, password) do
     case Repo.get_by(Player, username: username) do
       player -> authenticate(player, password)
