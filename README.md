@@ -2,4 +2,5 @@
 
 Features:
 - [X] SSH Key & Password authentication
-- [ ] Rate limiting
+- [X] Session rate limiting
+- [X] Multi-node support

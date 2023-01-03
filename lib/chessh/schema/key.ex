@@ -20,14 +20,6 @@ defmodule Chessh.Key do
     |> validate_format(:key, ~r/^(?!ssh-dss).+/, message: "DSA keys are not supported")
   end
 
-  defp update_encode_key(attrs, field) do
-    if Map.has_key?(attrs, field) do
-      Map.update!(attrs, field, &encode_key/1)
-    else
-      attrs
-    end
-  end
-
   def encode_key(key) do
     if is_tuple(key) do
       case key do
@@ -39,8 +31,15 @@ defmodule Chessh.Key do
     else
       key
     end
-    # Remove comment at end of key
     |> String.replace(~r/ [^ ]+\@[^ ]+$/, "")
     |> String.trim()
+  end
+
+  defp update_encode_key(attrs, field) do
+    if Map.has_key?(attrs, field) do
+      Map.update!(attrs, field, &encode_key/1)
+    else
+      attrs
+    end
   end
 end

@@ -64,8 +64,12 @@ defmodule Chessh.SSH.Tui do
     end
   end
 
-  def handle_msg({:EXIT, client_pid, _reason}, %{client_pid: client_pid} = state) do
-    {:stop, state.channel, state}
+  def handle_msg(
+        {:EXIT, client_pid, _reason},
+        %{client_pid: client_pid, channel_id: channel_id} = state
+      ) do
+    send(client_pid, :quit)
+    {:stop, channel_id, state}
   end
 
   def handle_msg(
@@ -94,7 +98,7 @@ defmodule Chessh.SSH.Tui do
         state
       ) do
     Logger.debug("DATA #{inspect(data)}")
-    #    send(state.client_pid, {:data, data})
+    send(state.client_pid, {:data, data})
     {:ok, state}
   end
 
@@ -126,10 +130,11 @@ defmodule Chessh.SSH.Tui do
   def handle_ssh_msg(
         {:ssh_cm, _connection_handler,
          {:window_change, _channel_id, width, height, _pixwidth, _pixheight}},
-        state
+        %{client_pid: client_pid} = state
       ) do
     Logger.debug("WINDOW CHANGE")
-    #    Chessh.SSH.Client.resize(state.client_pid, width, height)
+    send(client_pid, {:resize, {width, height}})
+
     {:ok,
      %{
        state

@@ -6,4 +6,9 @@ defmodule Chessh.Utils do
     |> List.delete_at(-1)
     |> to_string()
   end
+
+  def text_dim(text) do
+    split = String.split(text, "\n")
+    {Enum.reduce(split, 0, fn x, acc -> max(acc, String.length(x)) end), length(split)}
+  end
 end
