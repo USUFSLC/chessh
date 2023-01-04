@@ -8,13 +8,14 @@ config :chessh,
   ecto_repos: [Chessh.Repo],
   key_dir: Path.join(Path.dirname(__DIR__), "priv/keys"),
   port: 42_069,
-  max_sessions: 255
+  max_sessions: 255,
+  ascii_chars_json_file: Path.join(Path.dirname(__DIR__), "priv/ascii_chars.json")
 
 config :chessh, RateLimits,
   jail_timeout_ms: 5 * 60 * 1000,
   jail_attempt_threshold: 15,
   max_concurrent_user_sessions: 5,
-  player_session_message_burst_ms: 3_000,
-  player_session_message_burst_rate: 15
+  player_session_message_burst_ms: 1_000,
+  player_session_message_burst_rate: 8
 
 import_config "#{config_env()}.exs"

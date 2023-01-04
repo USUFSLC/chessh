@@ -1,6 +1,6 @@
 defmodule Chessh.SSH.Client do
   alias IO.ANSI
-
+  alias Chessh.SSH.Client.Menu
   require Logger
 
   use GenServer
@@ -26,7 +26,7 @@ defmodule Chessh.SSH.Client do
               height: 0,
               player_session: nil,
               buffer: [],
-              state_stack: [{&Chessh.SSH.Client.Menu.render/2, []}]
+              state_stack: [{Menu, %Menu.State{}}]
   end
 
   @impl true
@@ -61,13 +61,21 @@ defmodule Chessh.SSH.Client do
     end
   end
 
-  def handle({:data, data}, %State{tui_pid: tui_pid} = state) do
-    new_state =
-      keymap(data)
-      |> keypress(state)
+  def handle(
+        {:data, data},
+        %State{tui_pid: tui_pid, state_stack: [{module, _screen_state} | _tail]} = state
+      ) do
+    action = keymap(data)
 
-    send(tui_pid, {:send_data, render(new_state)})
-    {:noreply, new_state}
+    if action == :quit do
+      {:stop, :normal, state}
+    else
+      new_state = module.handle_input(action, state)
+
+      send(tui_pid, {:send_data, render(new_state)})
+
+      {:noreply, new_state}
+    end
   end
 
   def handle({:resize, {width, height}}, %State{tui_pid: tui_pid} = state) do
@@ -79,18 +87,6 @@ defmodule Chessh.SSH.Client do
 
     {:noreply, new_state}
   end
-
-  def keypress(:up, state), do: state
-  def keypress(:right, state), do: state
-  def keypress(:down, state), do: state
-  def keypress(:left, state), do: state
-
-  def keypress(:quit, state) do
-    send(self(), :quit)
-    state
-  end
-
-  def keypress(_, state), do: state
 
   def keymap(key) do
     case key do
@@ -106,17 +102,18 @@ defmodule Chessh.SSH.Client do
     end
   end
 
-  @spec terminal_size_allowed(any, any) :: boolean
   def terminal_size_allowed(width, height) do
     Enum.member?(@min_terminal_width..@max_terminal_width, width) &&
       Enum.member?(@min_terminal_height..@max_terminal_height, height)
   end
 
-  defp render(%{width: width, height: height, state_stack: [{render_fn, args} | _tail]} = state) do
+  defp render(
+         %State{width: width, height: height, state_stack: [{module, _screen_state}]} = state
+       ) do
     if terminal_size_allowed(width, height) do
       [
         @clear_codes ++
-          render_fn.(state, args)
+          module.render(state)
       ]
     else
       @terminal_bad_dim_msg

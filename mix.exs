@@ -33,7 +33,8 @@ defmodule Chessh.MixProject do
       {:postgrex, "~> 0.16.5"},
       {:bcrypt_elixir, "~> 3.0"},
       {:hammer, "~> 6.1"},
-      {:syn, "~> 3.3"}
+      {:syn, "~> 3.3"},
+      {:jason, "~> 1.3"}
     ]
   end
 
