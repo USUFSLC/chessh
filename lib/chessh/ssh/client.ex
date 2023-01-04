@@ -1,6 +1,6 @@
 defmodule Chessh.SSH.Client do
   alias IO.ANSI
-  alias Chessh.SSH.Client.{Menu, Board}
+  alias Chessh.SSH.Client.Menu
   require Logger
 
   use GenServer
