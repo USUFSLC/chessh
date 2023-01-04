@@ -1,6 +1,6 @@
 defmodule Chessh.SSH.Client do
   alias IO.ANSI
-  alias Chessh.SSH.Client.Menu
+  alias Chessh.SSH.Client.{Menu, Board}
   require Logger
 
   use GenServer
@@ -98,6 +98,7 @@ defmodule Chessh.SSH.Client do
       "\e[B" -> :down
       "\e[D" -> :left
       "\e[C" -> :right
+      "\r" -> :return
       x -> x
     end
   end
@@ -107,9 +108,9 @@ defmodule Chessh.SSH.Client do
       Enum.member?(@min_terminal_height..@max_terminal_height, height)
   end
 
-  defp render(
-         %State{width: width, height: height, state_stack: [{module, _screen_state}]} = state
-       ) do
+  def render(
+        %State{width: width, height: height, state_stack: [{module, _screen_state} | _]} = state
+      ) do
     if terminal_size_allowed(width, height) do
       [
         @clear_codes ++
