@@ -34,8 +34,9 @@ defmodule Chessh.SSH.Client.Board do
     rows =
       Enum.map(0..(@chess_board_height - 1), fn i ->
         Enum.map(0..(@chess_board_width - 1), fn j ->
-          List.duplicate(if(tileIsLight(i, j), do: ' ', else: '#'), tile_width)
+          List.duplicate(if(tileIsLight(i, j), do: ' ', else: '▊'), tile_width)
         end)
+        |> Enum.join("")
       end)
 
     Enum.flat_map(rows, fn row -> Enum.map(1..tile_height, fn _ -> row end) end)
@@ -70,7 +71,7 @@ defmodule Chessh.SSH.Client.Board do
                          data,
                          "#{rowI}, #{curr_column}",
                          @ascii_chars["pieces"][
-                           if(char != String.capitalize(char), do: "light", else: "dark")
+                           if(char != String.capitalize(char), do: "dark", else: "light")
                          ][type]
                        )}
                   end
@@ -86,20 +87,32 @@ defmodule Chessh.SSH.Client.Board do
 
     board = make_board(tile_dims)
 
-    Enum.zip_with([board, 1..length(board)], fn [row, rowI] ->
-      curr_y = div(rowI, tile_height)
+    Enum.zip_with([board, 0..(length(board) - 1)], fn [rowStr, row] ->
+      curr_y = div(row, tile_height)
 
-      Enum.zip_with([row, 1..length(row)], fn [char, col] ->
+      Enum.zip_with([String.graphemes(rowStr), 0..(String.length(rowStr) - 1)], fn [char, col] ->
         curr_x = div(col, tile_width)
-        key = "#{rowI}, #{col}"
+        key = "#{curr_y}, #{curr_x}"
 
         if Map.has_key?(coordinate_to_piece, key) do
-          piece_char =
+          piece_row =
             Map.fetch!(coordinate_to_piece, key)
-            |> Enum.at(rowI - curr_y * tile_height)
-            |> String.at(col - curr_x * tile_width)
+            |> Enum.at(row - curr_y * tile_height)
 
-          if piece_char == " ", do: String.Chars.to_string(char), else: piece_char
+          piece_row_len = String.length(piece_row)
+          centered_col = div(tile_width - piece_row_len, 2)
+          relative_to_tile_col = col - curr_x * tile_width
+          Logger.debug("#{piece_row_len}, #{centered_col}, #{relative_to_tile_col}")
+
+          piece_char =
+            if relative_to_tile_col >= centered_col &&
+                 relative_to_tile_col <= tile_width - centered_col - 1,
+               do: String.at(piece_row, relative_to_tile_col - centered_col),
+               else: " "
+
+          if piece_char == " ",
+            do: char,
+            else: piece_char
         else
           char
         end
@@ -109,11 +122,11 @@ defmodule Chessh.SSH.Client.Board do
   end
 
   def render(%Client.State{} = _state) do
-    board = make_board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", {9, 5})
+    board = make_board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", {7, 4})
 
     [ANSI.home()] ++
       Enum.map(
-        Enum.zip(0..(length(board) - 1), board),
+        Enum.zip(1..length(board), board),
         fn {i, line} ->
           [ANSI.cursor(i, 0), line]
         end

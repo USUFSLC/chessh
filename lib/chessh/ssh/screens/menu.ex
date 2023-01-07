@@ -38,7 +38,7 @@ defmodule Chessh.SSH.Client.Menu do
     {y, x} = center_rect({logo_width, logo_height + length(text)}, {width, height})
 
     Enum.flat_map(
-      Enum.zip(0..(length(text) - 1), text),
+      Enum.zip(1..length(text), text),
       fn {i, line} ->
         [
           ANSI.cursor(y + i + dy, x + dx),
