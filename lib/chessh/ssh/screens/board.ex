@@ -14,6 +14,9 @@ defmodule Chessh.SSH.Client.Board do
   @chess_board_height 8
   @chess_board_width 8
 
+  @dark_piece_color ANSI.magenta()
+  @light_piece_color ANSI.red()
+
   def tileIsLight(row, col) do
     rem(row, 2) == rem(col, 2)
   end
@@ -42,81 +45,124 @@ defmodule Chessh.SSH.Client.Board do
     Enum.flat_map(rows, fn row -> Enum.map(1..tile_height, fn _ -> row end) end)
   end
 
-  def make_board(fen, {tile_width, tile_height} = tile_dims) do
+  defp skip_cols_or_place_piece_reduce(char, {curr_column, data}, rowI) do
+    case Integer.parse(char) do
+      {skip, ""} ->
+        {curr_column + skip, data}
+
+      _ ->
+        case piece_type(char) do
+          nil ->
+            {curr_column, data}
+
+          type ->
+            shade = if(char != String.capitalize(char), do: "dark", else: "light")
+
+            {curr_column + 1,
+             Map.put(
+               data,
+               "#{rowI}, #{curr_column}",
+               {shade, type}
+             )}
+        end
+    end
+  end
+
+  defp make_coordinate_to_piece_art_map(fen) do
     rows =
       String.split(fen, " ")
       |> List.first()
       |> String.split("/")
 
-    coordinate_to_piece =
-      Enum.zip(rows, 0..(length(rows) - 1))
-      |> Enum.map(fn {row, rowI} ->
-        {@chess_board_height, pieces_per_row} =
-          Enum.reduce(
-            String.split(row, ""),
-            {0, %{}},
-            fn char, {curr_column, data} ->
-              case Integer.parse(char) do
-                {skip, ""} ->
-                  {curr_column + skip, data}
+    Enum.zip(rows, 0..(length(rows) - 1))
+    |> Enum.map(fn {row, rowI} ->
+      {@chess_board_height, pieces_per_row} =
+        Enum.reduce(
+          String.split(row, ""),
+          {0, %{}},
+          &skip_cols_or_place_piece_reduce(&1, &2, rowI)
+        )
 
-                _ ->
-                  case piece_type(char) do
-                    nil ->
-                      {curr_column, data}
+      pieces_per_row
+    end)
+    |> Enum.reduce(%{}, fn pieces_map_for_this_row, acc ->
+      Map.merge(acc, pieces_map_for_this_row)
+    end)
+  end
 
-                    type ->
-                      {curr_column + 1,
-                       Map.put(
-                         data,
-                         "#{rowI}, #{curr_column}",
-                         @ascii_chars["pieces"][
-                           if(char != String.capitalize(char), do: "dark", else: "light")
-                         ][type]
-                       )}
-                  end
-              end
-            end
-          )
-
-        pieces_per_row
-      end)
-      |> Enum.reduce(%{}, fn pieces_map_for_this_row, acc ->
-        Map.merge(acc, pieces_map_for_this_row)
-      end)
-
+  def make_board(fen, {tile_width, tile_height} = tile_dims) do
+    coordinate_to_piece = make_coordinate_to_piece_art_map(fen)
     board = make_board(tile_dims)
 
     Enum.zip_with([board, 0..(length(board) - 1)], fn [rowStr, row] ->
       curr_y = div(row, tile_height)
 
-      Enum.zip_with([String.graphemes(rowStr), 0..(String.length(rowStr) - 1)], fn [char, col] ->
-        curr_x = div(col, tile_width)
-        key = "#{curr_y}, #{curr_x}"
+      %{row_chars: row_chars} =
+        Enum.reduce(
+          Enum.zip(String.graphemes(rowStr), 0..(String.length(rowStr) - 1)),
+          %{current_color: ANSI.black(), row_chars: []},
+          fn {char, col}, %{current_color: current_color, row_chars: row_chars} = row_state ->
+            curr_x = div(col, tile_width)
+            key = "#{curr_y}, #{curr_x}"
 
-        if Map.has_key?(coordinate_to_piece, key) do
-          piece_row =
-            Map.fetch!(coordinate_to_piece, key)
-            |> Enum.at(row - curr_y * tile_height)
+            case Map.fetch(coordinate_to_piece, key) do
+              {:ok, {shade, type}} ->
+                piece = @ascii_chars["pieces"][shade][type]
+                piece_line = Enum.at(piece, row - curr_y * tile_height)
 
-          piece_row_len = String.length(piece_row)
-          centered_col = div(tile_width - piece_row_len, 2)
-          relative_to_tile_col = col - curr_x * tile_width
-          Logger.debug("#{piece_row_len}, #{centered_col}, #{relative_to_tile_col}")
+                piece_line_len = String.length(piece_line)
+                pad_left_right = div(tile_width - piece_line_len, 2)
+                relative_to_tile_col = col - curr_x * tile_width
 
-          piece_char =
-            if relative_to_tile_col >= centered_col &&
-                 relative_to_tile_col <= tile_width - centered_col - 1,
-               do: String.at(piece_row, relative_to_tile_col - centered_col),
-               else: " "
+                if relative_to_tile_col >= pad_left_right &&
+                     relative_to_tile_col < tile_width - pad_left_right do
+                  piece_char = String.at(piece_line, relative_to_tile_col - pad_left_right)
+                  new_char = if piece_char == " ", do: char, else: piece_char
 
-          if piece_char == " ",
-            do: char,
-            else: piece_char
-        else
-          char
-        end
-      end)
+                  color =
+                    if piece_char == " ",
+                      do: ANSI.default_color(),
+                      else: if(shade == "dark", do: @dark_piece_color, else: @light_piece_color)
+
+                  if color != current_color do
+                    %{
+                      row_state
+                      | current_color: color,
+                        row_chars: row_chars ++ [color, new_char]
+                    }
+                  else
+                    %{
+                      row_state
+                      | current_color: current_color,
+                        row_chars: row_chars ++ [new_char]
+                    }
+                  end
+                else
+                  %{
+                    row_state
+                    | current_color: ANSI.default_color(),
+                      row_chars: row_chars ++ [ANSI.default_color(), char]
+                  }
+                end
+
+              _ ->
+                if ANSI.white() != current_color do
+                  %{
+                    row_state
+                    | current_color: ANSI.default_color(),
+                      row_chars: row_chars ++ [ANSI.default_color(), char]
+                  }
+                else
+                  %{
+                    row_state
+                    | row_chars: row_chars ++ [char]
+                  }
+                end
+            end
+          end
+        )
+
+      row_chars
       |> Enum.join("")
     end)
   end

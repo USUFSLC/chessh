@@ -76,7 +76,6 @@ defmodule Chessh.SSH.Tui do
         {:send_data, data},
         %{connection_ref: connection_ref, channel_id: channel_id} = state
       ) do
-    Logger.debug("Data was sent to TUI process #{inspect(data)}")
     :ssh_connection.send(connection_ref, channel_id, data)
     {:ok, state}
   end
@@ -97,7 +96,6 @@ defmodule Chessh.SSH.Tui do
         {:ssh_cm, _connection_handler, {:data, _channel_id, _type, data}},
         state
       ) do
-    Logger.debug("DATA #{inspect(data)}")
     send(state.client_pid, {:data, data})
     {:ok, state}
   end
@@ -132,7 +130,6 @@ defmodule Chessh.SSH.Tui do
          {:window_change, _channel_id, width, height, _pixwidth, _pixheight}},
         %{client_pid: client_pid} = state
       ) do
-    Logger.debug("WINDOW CHANGE")
     send(client_pid, {:resize, {width, height}})
 
     {:ok,
