@@ -23,15 +23,14 @@ defmodule Chessh.SSH.Client.Menu do
                            MMMMMMMMMMM MMMMMMMMMMM MMMMMMMMMMMM"
 
   @options [
-    {"Option 1", {Chessh.SSH.Client.Board, %{}}},
-    {"Option 2", {Chessh.SSH.Client.Board, %{}}},
-    {"Option 3", {Chessh.SSH.Client.Board, %{}}}
+    {"Option 1", {Chessh.SSH.Client.Board, %Chessh.SSH.Client.Board.State{}}},
+    {"Option 2", {Chessh.SSH.Client.Board, %Chessh.SSH.Client.Board.State{}}}
   ]
 
   def render(%Client.State{
         width: width,
         height: height,
-        state_stack: [{_this_module, %State{selected: selected, y: dy, x: dx}} | _tail]
+        state_stack: [{_this_module, %State{selected: selected, y: dy, x: dx}} | _]
       }) do
     text = String.split(@logo, "\n")
     {logo_width, logo_height} = Utils.text_dim(@logo)
@@ -57,7 +56,7 @@ defmodule Chessh.SSH.Client.Menu do
       ) ++ [ANSI.home()]
   end
 
-  def wrap_around(index, delta, length) do
+  defp wrap_around(index, delta, length) do
     calc = index + delta
     if(calc < 0, do: length, else: 0) + rem(calc, length)
   end

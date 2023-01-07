@@ -2,17 +2,18 @@ defmodule Chessh.SSH.Client.Board do
   alias Chessh.SSH.Client
   alias IO.ANSI
 
-  require Logger
-
   defmodule State do
-    defstruct cursor_x: 0,
-              cursor_y: 0
+    defstruct cursor: %{x: 0, y: 0},
+              highlighted: %{},
+              move_from: nil
   end
 
   use Chessh.SSH.Client.Screen
 
   @chess_board_height 8
   @chess_board_width 8
+  @tile_width 7
+  @tile_height 4
 
   @dark_piece_color ANSI.magenta()
   @light_piece_color ANSI.red()
@@ -35,9 +36,10 @@ defmodule Chessh.SSH.Client.Board do
 
   def make_board({tile_width, tile_height}) do
     rows =
-      Enum.map(0..(@chess_board_height - 1), fn i ->
-        Enum.map(0..(@chess_board_width - 1), fn j ->
-          List.duplicate(if(tileIsLight(i, j), do: ' ', else: '▊'), tile_width)
+      Enum.map(0..(@chess_board_height - 1), fn row ->
+        Enum.map(0..(@chess_board_width - 1), fn col ->
+          if(tileIsLight(row, col), do: ' ', else: '▊')
+          |> List.duplicate(tile_width)
         end)
         |> Enum.join("")
       end)
@@ -90,7 +92,11 @@ defmodule Chessh.SSH.Client.Board do
     end)
   end
 
-  def make_board(fen, {tile_width, tile_height} = tile_dims) do
+  def draw_board(
+        fen,
+        {tile_width, tile_height} = tile_dims,
+        highlights
+      ) do
     coordinate_to_piece = make_coordinate_to_piece_art_map(fen)
     board = make_board(tile_dims)
 
@@ -104,6 +110,18 @@ defmodule Chessh.SSH.Client.Board do
           fn {char, col}, %{current_color: current_color, row_chars: row_chars} = row_state ->
             curr_x = div(col, tile_width)
             key = "#{curr_y}, #{curr_x}"
+            relative_to_tile_col = col - curr_x * tile_width
+
+            prefix =
+              if relative_to_tile_col == 0 do
+                case Map.fetch(highlights, {curr_y, curr_x}) do
+                  {:ok, color} ->
+                    color
+
+                  _ ->
+                    ANSI.default_background()
+                end
+              end
 
             case Map.fetch(coordinate_to_piece, key) do
               {:ok, {shade, type}} ->
@@ -112,7 +130,6 @@ defmodule Chessh.SSH.Client.Board do
 
                 piece_line_len = String.length(piece_line)
                 pad_left_right = div(tile_width - piece_line_len, 2)
-                relative_to_tile_col = col - curr_x * tile_width
 
                 if relative_to_tile_col >= pad_left_right &&
                      relative_to_tile_col < tile_width - pad_left_right do
@@ -128,20 +145,20 @@ defmodule Chessh.SSH.Client.Board do
                     %{
                       row_state
                       | current_color: color,
-                        row_chars: row_chars ++ [color, new_char]
+                        row_chars: row_chars ++ [prefix, color, new_char]
                     }
                   else
                     %{
                       row_state
                       | current_color: current_color,
-                        row_chars: row_chars ++ [new_char]
+                        row_chars: row_chars ++ [prefix, new_char]
                     }
                   end
                 else
                   %{
                     row_state
                     | current_color: ANSI.default_color(),
-                      row_chars: row_chars ++ [ANSI.default_color(), char]
+                      row_chars: row_chars ++ [prefix, ANSI.default_color(), char]
                   }
                 end
 
@@ -150,12 +167,12 @@ defmodule Chessh.SSH.Client.Board do
                   %{
                     row_state
                     | current_color: ANSI.default_color(),
-                      row_chars: row_chars ++ [ANSI.default_color(), char]
+                      row_chars: row_chars ++ [prefix, ANSI.default_color(), char]
                   }
                 else
                   %{
                     row_state
-                    | row_chars: row_chars ++ [char]
+                    | row_chars: row_chars ++ [prefix, char]
                   }
                 end
             end
@@ -167,8 +184,15 @@ defmodule Chessh.SSH.Client.Board do
     end)
   end
 
-  def render(%Client.State{} = _state) do
-    board = make_board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", {7, 4})
+  def render(%Client.State{
+        state_stack: [{_this_module, %State{highlighted: highlighted}} | _]
+      }) do
+    board =
+      draw_board(
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        {@tile_width, @tile_height},
+        highlighted
+      )
 
     [ANSI.home()] ++
       Enum.map(
@@ -179,9 +203,55 @@ defmodule Chessh.SSH.Client.Board do
       )
   end
 
-  def handle_input(action, %Client.State{} = state) do
-    case action do
-      _ -> state
-    end
+  def handle_input(
+        action,
+        %Client.State{
+          state_stack: [
+            {this_module,
+             %State{
+               move_from: move_from,
+               cursor: %{x: cursor_x, y: cursor_y} = cursor
+             } = screen_state}
+            | rest_stack
+          ]
+        } = state
+      ) do
+    new_cursor =
+      case action do
+        :left -> %{y: cursor_y, x: cursor_x - 1}
+        :right -> %{y: cursor_y, x: cursor_x + 1}
+        :down -> %{y: cursor_y + 1, x: cursor_x}
+        :up -> %{y: cursor_y - 1, x: cursor_x}
+        _ -> cursor
+      end
+
+    {new_move_from, _move_to} =
+      if action == :return do
+        coords = {new_cursor.y, new_cursor.x}
+
+        case move_from do
+          nil -> {coords, nil}
+          _ -> {nil, coords}
+        end
+      else
+        {move_from, nil}
+      end
+
+    %Client.State{
+      state
+      | state_stack: [
+          {this_module,
+           %State{
+             screen_state
+             | cursor: new_cursor,
+               move_from: new_move_from,
+               highlighted: %{
+                 new_move_from => ANSI.green_background(),
+                 {new_cursor.y, new_cursor.x} => ANSI.green_background()
+               }
+           }}
+          | rest_stack
+        ]
+    }
   end
 end

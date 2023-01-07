@@ -73,7 +73,6 @@ defmodule Chessh.SSH.Client do
       new_state = module.handle_input(action, state)
 
       send(tui_pid, {:send_data, render(new_state)})
-
       {:noreply, new_state}
     end
   end
