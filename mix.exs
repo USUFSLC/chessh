@@ -27,7 +27,7 @@ defmodule Chessh.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:chess, "~> 0.4.1"},
+      {:binbo, "~> 4.0.2"},
       {:ecto, "~> 3.9"},
       {:ecto_sql, "~> 3.9"},
       {:postgrex, "~> 0.16.5"},
