@@ -1,22 +1,18 @@
 defmodule Chessh.SSH.Client do
   alias IO.ANSI
-  alias Chessh.SSH.Client.Menu
   require Logger
 
   use GenServer
 
   @clear_codes [
     ANSI.clear(),
-    ANSI.reset(),
     ANSI.home()
   ]
 
-  @max_terminal_width 255
-  @max_terminal_height 127
-
-  @terminal_bad_dim_msg [
-    @clear_codes | "The dimensions of your terminal are not within in the valid range"
-  ]
+  @min_terminal_width 64
+  @min_terminal_height 31
+  @max_terminal_width 200
+  @max_terminal_height 100
 
   defmodule State do
     defstruct tui_pid: nil,
@@ -27,10 +23,10 @@ defmodule Chessh.SSH.Client do
   end
 
   @impl true
-  def init([%State{tui_pid: tui_pid} = state]) do
+  def init([%State{} = state]) do
     {:ok, screen_pid} =
       GenServer.start_link(Chessh.SSH.Client.Menu, [
-        %Chessh.SSH.Client.Menu.State{tui_pid: tui_pid}
+        %Chessh.SSH.Client.Menu.State{client_pid: self()}
       ])
 
     {:ok, %{state | screen_processes: [screen_pid]}}
@@ -76,27 +72,36 @@ defmodule Chessh.SSH.Client do
     end
   end
 
-  #  def handle(
-  #        {:refresh, },
-  #        %State{screen_processes: [screen_pid | _] = screen_processes, width: width, height: height} = state
-  #      ) do
-  #    send(screen_pid, {:render, tui_pid, width, height})
-  #    {:noreply, state}
-  #  end
+  def handle(
+        :refresh,
+        %State{} = state
+      ) do
+    render(state)
+    {:noreply, state}
+  end
+
+  def handle(
+        {:send_to_ssh, data},
+        %State{width: width, height: height, tui_pid: tui_pid} = state
+      ) do
+    case get_terminal_dim_msg(width, height) do
+      {true, msg} -> send(tui_pid, {:send_data, msg})
+      {false, _} -> send(tui_pid, {:send_data, data})
+    end
+
+    {:noreply, state}
+  end
 
   def handle(
         {:resize, {width, height}},
         %State{tui_pid: tui_pid, screen_processes: [screen_pid | _]} = state
       ) do
-    new_state = %State{state | width: width, height: height}
-
-    if height <= @max_terminal_height && width <= @max_terminal_width do
-      send(screen_pid, {:render, width, height})
-    else
-      send(tui_pid, {:send_data, @terminal_bad_dim_msg})
+    case get_terminal_dim_msg(width, height) do
+      {true, msg} -> send(tui_pid, {:send_data, msg})
+      {false, _} -> send(screen_pid, {:render, width, height})
     end
 
-    {:noreply, new_state}
+    {:noreply, %State{state | width: width, height: height}}
   end
 
   def keymap(key) do
@@ -111,6 +116,32 @@ defmodule Chessh.SSH.Client do
       "\e[C" -> :right
       "\r" -> :return
       x -> x
+    end
+  end
+
+  defp get_terminal_dim_msg(width, height) do
+    case {height > @max_terminal_height, height < @min_terminal_height,
+          width > @max_terminal_width, width < @min_terminal_width} do
+      {true, _, _, _} -> {true, @clear_codes ++ ["The terminal height is too large."]}
+      {_, true, _, _} -> {true, @clear_codes ++ ["The terminal height is too small."]}
+      {_, _, true, _} -> {true, @clear_codes ++ ["The terminal width is too large"]}
+      {_, _, _, true} -> {true, @clear_codes ++ ["The terminal width is too small."]}
+      {false, false, false, false} -> {false, nil}
+    end
+  end
+
+  defp render(%State{
+         tui_pid: tui_pid,
+         width: width,
+         height: height,
+         screen_processes: [screen_pid | _]
+       }) do
+    {out_of_range, msg} = get_terminal_dim_msg(width, height)
+
+    if out_of_range && msg do
+      send(tui_pid, {:send_data, msg})
+    else
+      send(screen_pid, {:render, width, height})
     end
   end
 end

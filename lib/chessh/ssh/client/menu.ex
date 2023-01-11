@@ -5,16 +5,8 @@ defmodule Chessh.SSH.Client.Menu do
   require Logger
 
   defmodule State do
-    defstruct dy: 0,
-              dx: 0,
-              tui_pid: nil,
+    defstruct client_pid: nil,
               selected: 0
-  end
-
-  use Chessh.SSH.Client.Screen
-
-  def init([%State{} = state | _]) do
-    {:ok, state}
   end
 
   @logo "                            Simponic's                           
@@ -25,6 +17,11 @@ defmodule Chessh.SSH.Client.Menu do
 88.  ... 88    88 88.  ... M. .MMM'  M M. .MMM'  M M  MMMMM  MM 
 `88888P' dP    dP `88888P' Mb.     .dM Mb.     .dM M  MMMMM  MM 
                            MMMMMMMMMMM MMMMMMMMMMM MMMMMMMMMMMM"
+  use Chessh.SSH.Client.Screen
+
+  def init([%State{} = state | _]) do
+    {:ok, state}
+  end
 
   #  @options [
   #    {"Option 1", {Chessh.SSH.Client.Board, [%Chessh.SSH.Client.Board.State{}]}},
@@ -36,12 +33,7 @@ defmodule Chessh.SSH.Client.Menu do
     {"Option 3", {}}
   ]
 
-  def handle_info({:render, width, height}, %State{} = state) do
-    render(width, height, state)
-    {:noreply, state}
-  end
-
-  def handle_info({:input, width, height, action}, %State{selected: selected} = state) do
+  def input(width, height, action, %State{client_pid: client_pid, selected: selected} = state) do
     new_state =
       case(action) do
         :up ->
@@ -61,36 +53,43 @@ defmodule Chessh.SSH.Client.Menu do
           state
       end
 
-    render(width, height, new_state)
-    {:noreply, new_state}
+    send(client_pid, {:send_to_ssh, render_state(width, height, new_state)})
+    new_state
   end
 
-  def render(width, height, %State{tui_pid: tui_pid, dy: dy, dx: dx, selected: selected}) do
-    text = String.split(@logo, "\n")
-    {logo_width, logo_height} = Utils.text_dim(@logo)
-    {y, x} = center_rect({logo_width, logo_height + length(text)}, {width, height})
+  def render(width, height, %State{client_pid: client_pid} = state) do
+    send(client_pid, {:send_to_ssh, render_state(width, height, state)})
+    state
+  end
 
-    rendered =
+  defp render_state(
+         width,
+         height,
+         %State{selected: selected}
+       ) do
+    logo_lines = String.split(@logo, "\n")
+    {logo_width, logo_height} = Utils.text_dim(@logo)
+    {y, x} = center_rect({logo_width, logo_height + length(logo_lines)}, {width, height})
+
+    [ANSI.clear()] ++
       Enum.flat_map(
-        Enum.zip(1..length(text), text),
+        Enum.zip(1..length(logo_lines), logo_lines),
         fn {i, line} ->
           [
-            ANSI.cursor(y + i + dy, x + dx),
+            ANSI.cursor(y + i, x),
             line
           ]
         end
       ) ++
-        Enum.flat_map(
-          Enum.zip(0..(length(@options) - 1), @options),
-          fn {i, {option, _}} ->
-            [
-              ANSI.cursor(y + length(text) + i + dy, x + dx),
-              if(i == selected, do: ANSI.format([:light_cyan, "* #{option}"]), else: option)
-            ]
-          end
-        ) ++ [ANSI.home()]
-
-    send(tui_pid, {:send_data, rendered})
+      Enum.flat_map(
+        Enum.zip(0..(length(@options) - 1), @options),
+        fn {i, {option, _}} ->
+          [
+            ANSI.cursor(y + length(logo_lines) + i + 1, x),
+            if(i == selected, do: ANSI.format([:bright, :light_cyan, "+ #{option}"]), else: option)
+          ]
+        end
+      ) ++ [ANSI.home()]
   end
 
   defp wrap_around(index, delta, length) do
