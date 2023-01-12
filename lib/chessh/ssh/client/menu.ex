@@ -23,10 +23,6 @@ defmodule Chessh.SSH.Client.Menu do
     {:ok, state}
   end
 
-  #  @options [
-  #    {"Option 1", {Chessh.SSH.Client.Board, [%Chessh.SSH.Client.Board.State{}]}},
-  #    {"Option 2", {Chessh.SSH.Client.Board, [%Chessh.SSH.Client.Board.State{}]}}
-  #  ]
   @options [
     {"Option 1", {}},
     {"Option 2", {}},

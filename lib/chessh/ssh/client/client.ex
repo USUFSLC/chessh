@@ -25,8 +25,8 @@ defmodule Chessh.SSH.Client do
   @impl true
   def init([%State{} = state]) do
     {:ok, screen_pid} =
-      GenServer.start_link(Chessh.SSH.Client.Menu, [
-        %Chessh.SSH.Client.Menu.State{client_pid: self()}
+      GenServer.start_link(Chessh.SSH.Client.Board, [
+        %Chessh.SSH.Client.Board.State{client_pid: self()}
       ])
 
     {:ok, %{state | screen_processes: [screen_pid]}}
