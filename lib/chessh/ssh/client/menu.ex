@@ -35,11 +35,11 @@ defmodule Chessh.SSH.Client.Menu do
         :up ->
           %State{
             state
-            | selected: wrap_around(selected, -1, length(@options))
+            | selected: Utils.wrap_around(selected, -1, length(@options))
           }
 
         :down ->
-          %State{state | selected: wrap_around(selected, 1, length(@options))}
+          %State{state | selected: Utils.wrap_around(selected, 1, length(@options))}
 
         #      :return ->
         #        {_, new_state} = Enum.at(@options, selected)
@@ -86,10 +86,5 @@ defmodule Chessh.SSH.Client.Menu do
           ]
         end
       ) ++ [ANSI.home()]
-  end
-
-  defp wrap_around(index, delta, length) do
-    calc = index + delta
-    if(calc < 0, do: length, else: 0) + rem(calc, length)
   end
 end
