@@ -103,7 +103,7 @@ defmodule Chessh.SSH.Tui do
   def handle_ssh_msg(
         {:ssh_cm, connection_handler,
          {:pty, channel_id, want_reply?, {_term, width, height, _pixwidth, _pixheight, _opts}}},
-        %State{client_pid: client_pid} = state
+        %State{} = state
       ) do
     Logger.debug("#{inspect(state.player_session)} has requested a PTY")
     :ssh_connection.reply_request(connection_handler, want_reply?, :success, channel_id)

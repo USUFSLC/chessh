@@ -237,14 +237,6 @@ defmodule Chessh.SSH.Client.Board.Renderer do
     end)
   end
 
-  defp render_flipped(rows, flipped) do
-    if !flipped do
-      rows
-    else
-      rows
-    end
-  end
-
   defp make_board({tile_width, tile_height}) do
     rows =
       Enum.map(0..(@chess_board_height - 1), fn row ->
