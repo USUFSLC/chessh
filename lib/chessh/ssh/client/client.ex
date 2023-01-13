@@ -10,7 +10,7 @@ defmodule Chessh.SSH.Client do
   ]
 
   @min_terminal_width 64
-  @min_terminal_height 31
+  @min_terminal_height 38
   @max_terminal_width 220
   @max_terminal_height 100
 

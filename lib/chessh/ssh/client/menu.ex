@@ -65,7 +65,7 @@ defmodule Chessh.SSH.Client.Menu do
        ) do
     logo_lines = String.split(@logo, "\n")
     {logo_width, logo_height} = Utils.text_dim(@logo)
-    {y, x} = center_rect({logo_width, logo_height + length(logo_lines)}, {width, height})
+    {y, x} = Utils.center_rect({logo_width, logo_height + length(logo_lines)}, {width, height})
 
     [ANSI.clear()] ++
       Enum.flat_map(

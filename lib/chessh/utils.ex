@@ -1,4 +1,23 @@
 defmodule Chessh.Utils do
+  @ascii_chars Application.compile_env!(:chessh, :ascii_chars_json_file)
+               |> File.read!()
+               |> Jason.decode!()
+
+  @clear_codes [
+    IO.ANSI.clear(),
+    IO.ANSI.home()
+  ]
+
+  def ascii_chars(), do: @ascii_chars
+  def clear_codes(), do: @clear_codes
+
+  def center_rect({rect_width, rect_height}, {parent_width, parent_height}) do
+    {
+      div(parent_height - rect_height, 2),
+      div(parent_width - rect_width, 2)
+    }
+  end
+
   def pid_to_str(pid) do
     pid
     |> :erlang.pid_to_list()
