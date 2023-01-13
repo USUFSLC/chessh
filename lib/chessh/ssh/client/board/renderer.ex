@@ -2,6 +2,7 @@ defmodule Chessh.SSH.Client.Board.Renderer do
   alias IO.ANSI
   alias Chessh.Utils
   alias Chessh.SSH.Client.Board
+  require Logger
 
   @chess_board_height 8
   @chess_board_width 8
@@ -27,13 +28,15 @@ defmodule Chessh.SSH.Client.Board.Renderer do
   def render_board_state(fen, %Board.State{
         width: _width,
         height: _height,
-        highlighted: highlighted
+        highlighted: highlighted,
+        flipped: flipped
       }) do
     board =
       draw_board(
         fen,
         {@tile_width, @tile_height},
-        highlighted
+        highlighted,
+        flipped
       )
 
     [ANSI.home()] ++
@@ -109,7 +112,8 @@ defmodule Chessh.SSH.Client.Board.Renderer do
   defp draw_board(
          fen,
          {tile_width, tile_height} = tile_dims,
-         highlights
+         highlights,
+         flipped
        ) do
     coordinate_to_piece = make_coordinate_to_piece_art_map(fen)
     board = make_board(tile_dims)
@@ -123,7 +127,10 @@ defmodule Chessh.SSH.Client.Board.Renderer do
            %{current_color: ANSI.black(), row_chars: []},
            fn {char, col}, %{current_color: current_color, row_chars: row_chars} = row_state ->
              curr_x = div(col, tile_width)
-             key = "#{curr_y}, #{curr_x}"
+
+             key =
+               "#{if !flipped, do: curr_y, else: @chess_board_height - curr_y - 1}, #{if !flipped, do: curr_x, else: @chess_board_width - curr_x - 1}"
+
              relative_to_tile_col = col - curr_x * tile_width
 
              prefix =
@@ -137,63 +144,54 @@ defmodule Chessh.SSH.Client.Board.Renderer do
                  end
                end
 
-             case Map.fetch(coordinate_to_piece, key) do
-               {:ok, {shade, type}} ->
-                 piece = Utils.ascii_chars()["pieces"][shade][type]
-                 piece_line = Enum.at(piece, row - curr_y * tile_height)
+             {color, row_chars} =
+               case Map.fetch(coordinate_to_piece, key) do
+                 {:ok, {shade, type}} ->
+                   piece = Utils.ascii_chars()["pieces"][shade][type]
+                   piece_line = Enum.at(piece, row - curr_y * tile_height)
+                   pad_left_right = div(tile_width - String.length(piece_line), 2)
 
-                 piece_line_len = String.length(piece_line)
-                 pad_left_right = div(tile_width - piece_line_len, 2)
+                   if relative_to_tile_col >= pad_left_right &&
+                        relative_to_tile_col < tile_width - pad_left_right do
+                     piece_char = String.at(piece_line, relative_to_tile_col - pad_left_right)
+                     new_char = if piece_char == " ", do: char, else: piece_char
 
-                 if relative_to_tile_col >= pad_left_right &&
-                      relative_to_tile_col < tile_width - pad_left_right do
-                   piece_char = String.at(piece_line, relative_to_tile_col - pad_left_right)
-                   new_char = if piece_char == " ", do: char, else: piece_char
+                     color =
+                       if piece_char == " ",
+                         do: ANSI.default_color(),
+                         else:
+                           if(shade == "dark", do: @dark_piece_color, else: @light_piece_color)
 
-                   color =
-                     if piece_char == " ",
-                       do: ANSI.default_color(),
-                       else: if(shade == "dark", do: @dark_piece_color, else: @light_piece_color)
-
-                   if color != current_color do
-                     %{
-                       row_state
-                       | current_color: color,
-                         row_chars: row_chars ++ [prefix, color, new_char]
-                     }
+                     if color != current_color do
+                       {color, row_chars ++ [prefix, color, new_char]}
+                     else
+                       {current_color, row_chars ++ [prefix, new_char]}
+                     end
                    else
-                     %{
-                       row_state
-                       | current_color: current_color,
-                         row_chars: row_chars ++ [prefix, new_char]
-                     }
+                     {ANSI.default_color(), row_chars ++ [prefix, ANSI.default_color(), char]}
                    end
-                 else
-                   %{
-                     row_state
-                     | current_color: ANSI.default_color(),
-                       row_chars: row_chars ++ [prefix, ANSI.default_color(), char]
-                   }
-                 end
 
-               _ ->
-                 if ANSI.white() != current_color do
-                   %{
-                     row_state
-                     | current_color: ANSI.default_color(),
-                       row_chars: row_chars ++ [prefix, ANSI.default_color(), char]
-                   }
-                 else
-                   %{
-                     row_state
-                     | row_chars: row_chars ++ [prefix, char]
-                   }
-                 end
-             end
+                 _ ->
+                   if ANSI.default_color() != current_color do
+                     {ANSI.default_color(), row_chars ++ [prefix, ANSI.default_color(), char]}
+                   else
+                     {current_color, row_chars ++ [prefix, char]}
+                   end
+               end
+
+             %{
+               row_state
+               | current_color: color,
+                 row_chars: row_chars
+             }
            end
          )
 
-       curr_num = Utils.ascii_chars()["numbers"][Integer.to_string(curr_y)]
+       curr_num =
+         Utils.ascii_chars()["numbers"][
+           Integer.to_string(if flipped, do: curr_y + 1, else: @chess_board_height - curr_y)
+         ]
+
        curr_num_line_no = rem(row, @tile_height)
 
        Enum.join(
@@ -208,29 +206,43 @@ defmodule Chessh.SSH.Client.Board.Renderer do
          ] ++ row_chars,
          ""
        )
-     end) ++
-       Enum.map(0..(@tile_height - 1), fn row ->
-         String.duplicate(" ", @tile_width) <>
-           (Enum.map(0..(@chess_board_width - 1), fn col ->
-              curr_letter = Utils.ascii_chars()["letters"][List.to_string([?a + col])]
-              curr_letter_line_no = rem(row, @tile_height)
-
-              curr_line =
-                if(curr_letter_line_no < length(curr_letter),
-                  do: Enum.at(curr_letter, curr_letter_line_no),
-                  else: ""
-                )
-
-              center_prefix_len = div(@tile_width - String.length(curr_line), 2)
-
-              String.pad_trailing(
-                String.duplicate(" ", center_prefix_len) <> curr_line,
-                @tile_width
-              )
-            end)
-            |> Enum.join(""))
-       end))
+     end) ++ column_coords(flipped))
     |> Enum.map(fn row_line -> "#{ANSI.default_background()}#{row_line}" end)
+  end
+
+  defp column_coords(flipped) do
+    Enum.map(0..(@tile_height - 1), fn row ->
+      String.duplicate(" ", @tile_width) <>
+        (Enum.map(
+           if(!flipped, do: 0..(@chess_board_width - 1), else: (@chess_board_width - 1)..0),
+           fn col ->
+             curr_letter = Utils.ascii_chars()["letters"][List.to_string([?a + col])]
+             curr_letter_line_no = rem(row, @tile_height)
+
+             curr_line =
+               if(curr_letter_line_no < length(curr_letter),
+                 do: Enum.at(curr_letter, curr_letter_line_no),
+                 else: ""
+               )
+
+             center_prefix_len = div(@tile_width - String.length(curr_line), 2)
+
+             String.pad_trailing(
+               String.duplicate(" ", center_prefix_len) <> curr_line,
+               @tile_width
+             )
+           end
+         )
+         |> Enum.join(""))
+    end)
+  end
+
+  defp render_flipped(rows, flipped) do
+    if !flipped do
+      rows
+    else
+      rows
+    end
   end
 
   defp make_board({tile_width, tile_height}) do

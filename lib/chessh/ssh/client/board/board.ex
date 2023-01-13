@@ -11,20 +11,21 @@ defmodule Chessh.SSH.Client.Board do
               client_pid: nil,
               binbo_pid: nil,
               width: 0,
-              height: 0
-
-    #              flipped: false
+              height: 0,
+              flipped: false
   end
 
   use Chessh.SSH.Client.Screen
 
-  def init([%State{game_id: game_id} = state | _]) do
+  def init([%State{client_pid: client_pid, game_id: game_id} = state | _]) do
     :syn.add_node_to_scopes([:games])
     :ok = :syn.join(:games, {:game, game_id}, self())
 
     :binbo.start()
     {:ok, binbo_pid} = :binbo.new_server()
     :binbo.new_game(binbo_pid)
+
+    send(client_pid, {:send_to_ssh, Utils.clear_codes()})
 
     {:ok, %State{state | binbo_pid: binbo_pid}}
   end
@@ -49,8 +50,8 @@ defmodule Chessh.SSH.Client.Board do
           move_from: move_from,
           game_id: game_id,
           cursor: %{x: cursor_x, y: cursor_y} = cursor,
-          client_pid: client_pid
-          #          flipped: flipped
+          client_pid: client_pid,
+          flipped: flipped
         } = state
       ) do
     new_cursor =
@@ -76,7 +77,11 @@ defmodule Chessh.SSH.Client.Board do
 
     # TODO: Check move here, then publish new move, subscribers get from DB instead
     if move_from && move_to do
-      attempted_move = "#{Renderer.to_chess_coord(move_from)}#{Renderer.to_chess_coord(move_to)}"
+      attempted_move =
+        if flipped,
+          do:
+            "#{Renderer.to_chess_coord(flip(move_from))}#{Renderer.to_chess_coord(flip(move_to))}",
+          else: "#{Renderer.to_chess_coord(move_from)}#{Renderer.to_chess_coord(move_to)}"
 
       :syn.publish(:games, {:game, game_id}, {:new_move, attempted_move})
     end
@@ -90,8 +95,8 @@ defmodule Chessh.SSH.Client.Board do
           new_move_from => Renderer.from_select_background()
         },
         width: width,
-        height: height
-        #        flipped: if(action == "f", do: !flipped, else: flipped)
+        height: height,
+        flipped: if(action == "f", do: !flipped, else: flipped)
     }
 
     send(client_pid, {:send_to_ssh, render_state(new_state)})
@@ -102,6 +107,9 @@ defmodule Chessh.SSH.Client.Board do
     send(client_pid, {:send_to_ssh, render_state(state)})
     %State{state | width: width, height: height}
   end
+
+  def flip({y, x}),
+    do: {Renderer.chess_board_height() - 1 - y, Renderer.chess_board_width() - 1 - x}
 
   defp render_state(
          %State{
