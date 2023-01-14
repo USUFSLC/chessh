@@ -15,7 +15,8 @@ defmodule Chessh.SSH.Daemon do
   end
 
   def init(state) do
-    GenServer.cast(self(), :start)
+    send(self(), :start)
+
     {:ok, state}
   end
 
@@ -58,7 +59,7 @@ defmodule Chessh.SSH.Daemon do
   def pwd_authenticate(username, password, inet, _state),
     do: pwd_authenticate(username, password, inet)
 
-  def handle_cast(:start, state) do
+  def handle_info(:start, state) do
     port = Application.fetch_env!(:chessh, :port)
     key_dir = String.to_charlist(Application.fetch_env!(:chessh, :key_dir))
     max_sessions = Application.fetch_env!(:chessh, :max_sessions)

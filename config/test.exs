@@ -12,4 +12,5 @@ config :chessh, Chessh.Repo,
   pool: Ecto.Adapters.SQL.Sandbox
 
 config :chessh,
+  port: 34_355,
   key_dir: Path.join(Path.dirname(__DIR__), "priv/test_keys")
