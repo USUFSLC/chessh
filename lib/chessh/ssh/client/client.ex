@@ -19,7 +19,8 @@ defmodule Chessh.SSH.Client do
               width: 0,
               height: 0,
               player_session: nil,
-              screen_processes: []
+              screen_pid: nil,
+              screen_state_initials: []
   end
 
   @impl true
@@ -30,13 +31,29 @@ defmodule Chessh.SSH.Client do
 
   @impl true
   def handle_info(
-        {:set_screen_process, module, screen_state},
-        %State{width: width, height: height, screen_processes: screen_processes} = state
+        {:set_screen_process, module, screen_state_initial},
+        %State{
+          width: width,
+          height: height,
+          screen_state_initials: screen_state_initials,
+          screen_pid: screen_pid
+        } = state
       ) do
-    {:ok, new_screen_pid} = GenServer.start_link(module, [%{screen_state | client_pid: self()}])
+    if screen_pid do
+      Process.unlink(screen_pid)
+    end
+
+    {:ok, new_screen_pid} =
+      GenServer.start_link(module, [%{screen_state_initial | client_pid: self()}])
+
     send(new_screen_pid, {:render, width, height})
 
-    {:noreply, %{state | screen_processes: [new_screen_pid | screen_processes]}}
+    {:noreply,
+     %State{
+       state
+       | screen_pid: new_screen_pid,
+         screen_state_initials: [{module, screen_state_initial} | screen_state_initials]
+     }}
   end
 
   @impl true
@@ -67,18 +84,22 @@ defmodule Chessh.SSH.Client do
 
   def handle(
         {:data, data},
-        %State{width: width, height: height, screen_processes: [screen_pid | rest_processes]} =
-          state
+        %State{
+          width: width,
+          height: height,
+          screen_pid: screen_pid,
+          screen_state_initials: [_ | rest_initial]
+        } = state
       ) do
     case keymap(data) do
       :quit ->
         {:stop, :normal, state}
 
       :previous_screen ->
-        Logger.debug(inspect(rest_processes))
-        Process.exit(screen_pid, :kill)
+        [{prev_module, prev_state_initial} | _] = rest_initial
+        send(self(), {:set_screen_process, prev_module, prev_state_initial})
 
-        {:noreply, %State{state | screen_processes: rest_processes}}
+        {:noreply, %State{state | screen_state_initials: rest_initial}}
 
       action ->
         send(screen_pid, {:input, width, height, action})
@@ -108,7 +129,7 @@ defmodule Chessh.SSH.Client do
 
   def handle(
         {:resize, {width, height}},
-        %State{tui_pid: tui_pid, screen_processes: [screen_pid | _]} = state
+        %State{tui_pid: tui_pid, screen_pid: screen_pid} = state
       ) do
     case get_terminal_dim_msg(width, height) do
       {true, msg} -> send(tui_pid, {:send_data, msg})
@@ -150,7 +171,7 @@ defmodule Chessh.SSH.Client do
          tui_pid: tui_pid,
          width: width,
          height: height,
-         screen_processes: [screen_pid | _]
+         screen_pid: screen_pid
        }) do
     {out_of_range, msg} = get_terminal_dim_msg(width, height)
 
