@@ -24,9 +24,11 @@ defmodule Chessh.SSH.Client.Menu do
   end
 
   @options [
-    {"Option 1", {}},
-    {"Option 2", {}},
-    {"Option 3", {}}
+    {"Start A Game", {Chessh.SSH.Client.Board, %Chessh.SSH.Client.Board.State{}}},
+    {"Join A Game", {}},
+    {"My Games", {}},
+    {"Settings", {}},
+    {"Help", {}}
   ]
 
   def input(width, height, action, %State{client_pid: client_pid, selected: selected} = state) do
@@ -41,15 +43,19 @@ defmodule Chessh.SSH.Client.Menu do
         :down ->
           %State{state | selected: Utils.wrap_around(selected, 1, length(@options))}
 
-        #      :return ->
-        #        {_, new_state} = Enum.at(@options, selected)
-        #        new_state
+        :return ->
+          {_option, {module, state}} = Enum.at(@options, selected)
+          send(client_pid, {:set_screen_process, module, state})
+          state
 
         _ ->
           state
       end
 
-    send(client_pid, {:send_to_ssh, render_state(width, height, new_state)})
+    if !(action == :return) do
+      send(client_pid, {:send_to_ssh, render_state(width, height, new_state)})
+    end
+
     new_state
   end
 

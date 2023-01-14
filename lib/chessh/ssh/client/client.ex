@@ -24,12 +24,19 @@ defmodule Chessh.SSH.Client do
 
   @impl true
   def init([%State{} = state]) do
-    {:ok, screen_pid} =
-      GenServer.start_link(Chessh.SSH.Client.Board, [
-        %Chessh.SSH.Client.Board.State{client_pid: self()}
-      ])
+    send(self(), {:set_screen_process, Chessh.SSH.Client.Menu, %Chessh.SSH.Client.Menu.State{}})
+    {:ok, state}
+  end
 
-    {:ok, %{state | screen_processes: [screen_pid]}}
+  @impl true
+  def handle_info(
+        {:set_screen_process, module, screen_state},
+        %State{width: width, height: height, screen_processes: screen_processes} = state
+      ) do
+    {:ok, new_screen_pid} = GenServer.start_link(module, [%{screen_state | client_pid: self()}])
+    send(new_screen_pid, {:render, width, height})
+
+    {:noreply, %{state | screen_processes: [new_screen_pid | screen_processes]}}
   end
 
   @impl true
@@ -60,15 +67,22 @@ defmodule Chessh.SSH.Client do
 
   def handle(
         {:data, data},
-        %State{width: width, height: height, screen_processes: [screen_pid | _]} = state
+        %State{width: width, height: height, screen_processes: [screen_pid | rest_processes]} =
+          state
       ) do
-    action = keymap(data)
+    case keymap(data) do
+      :quit ->
+        {:stop, :normal, state}
 
-    if action == :quit do
-      {:stop, :normal, state}
-    else
-      send(screen_pid, {:input, width, height, action})
-      {:noreply, state}
+      :previous_screen ->
+        Logger.debug(inspect(rest_processes))
+        Process.exit(screen_pid, :kill)
+
+        {:noreply, %State{state | screen_processes: rest_processes}}
+
+      action ->
+        send(screen_pid, {:input, width, height, action})
+        {:noreply, state}
     end
   end
 
@@ -109,6 +123,8 @@ defmodule Chessh.SSH.Client do
       # Exit keys - C-c and C-d
       <<3>> -> :quit
       <<4>> -> :quit
+      # C-b
+      <<2>> -> :previous_screen
       # Arrow keys
       "\e[A" -> :up
       "\e[B" -> :down
