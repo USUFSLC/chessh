@@ -4,6 +4,7 @@ defmodule Chessh.SSH.ServerKey do
 
   @behaviour :ssh_server_key_api
 
+  @impl true
   def is_auth_key(key, username, _daemon_options) do
     PlayerSession.update_sessions_and_player_satisfies(
       username,
@@ -11,6 +12,7 @@ defmodule Chessh.SSH.ServerKey do
     )
   end
 
+  @impl true
   def host_key(algorithm, daemon_options) do
     :ssh_file.host_key(algorithm, daemon_options)
   end
