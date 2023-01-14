@@ -10,10 +10,10 @@ defmodule Chessh.SSH.Client.Board.Renderer do
   @tile_width 7
   @tile_height 4
 
-  @from_select_background ANSI.green_background()
+  @from_select_background ANSI.light_blue_background()
   @to_select_background ANSI.blue_background()
-  @dark_piece_color ANSI.red()
-  @light_piece_color ANSI.magenta()
+  @dark_piece_color ANSI.light_red()
+  @light_piece_color ANSI.light_magenta()
 
   def chess_board_height(), do: @chess_board_height
   def chess_board_width(), do: @chess_board_width
