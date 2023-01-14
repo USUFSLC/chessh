@@ -14,7 +14,7 @@ defmodule Chessh.PlayerSession do
 
   def changeset(player_session, attrs) do
     player_session
-    |> cast(attrs, [:login])
+    |> cast(attrs, [:login, :node_id, :process])
   end
 
   def concurrent_sessions(player) do
@@ -58,12 +58,17 @@ defmodule Chessh.PlayerSession do
               "Creating session for player #{username} on node #{System.fetch_env!("NODE_ID")} with process #{inspect(self())}"
             )
 
-            Repo.insert(%PlayerSession{
-              login: DateTime.utc_now(),
-              node_id: System.fetch_env!("NODE_ID"),
-              player: player,
-              process: Utils.pid_to_str(self())
-            })
+            now = DateTime.utc_now()
+
+            Repo.insert!(
+              %PlayerSession{
+                login: now,
+                node_id: System.fetch_env!("NODE_ID"),
+                player: player,
+                process: Utils.pid_to_str(self())
+              },
+              on_conflict: :nothing
+            )
 
             concurrent_sessions = PlayerSession.concurrent_sessions(player)
 
