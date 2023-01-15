@@ -1,7 +1,7 @@
-defmodule Chessh.SSH.Client.Board.Renderer do
+defmodule Chessh.SSH.Client.Game.Renderer do
   alias IO.ANSI
   alias Chessh.Utils
-  alias Chessh.SSH.Client.Board
+  alias Chessh.SSH.Client.Game
   require Logger
 
   @chess_board_height 8
@@ -25,7 +25,7 @@ defmodule Chessh.SSH.Client.Board.Renderer do
     "#{List.to_string([?a + x])}#{@chess_board_height - y}"
   end
 
-  def render_board_state(fen, %Board.State{
+  def render_board_state(fen, %Game.State{
         width: _width,
         height: _height,
         highlighted: highlighted,

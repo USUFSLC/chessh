@@ -1,12 +1,15 @@
 defmodule Chessh.SSH.Client.Menu do
-  alias Chessh.Utils
   alias IO.ANSI
+  alias Chessh.{Utils, Repo, Game}
+  import Ecto.Query
 
   require Logger
 
   defmodule State do
     defstruct client_pid: nil,
-              selected: 0
+              selected: 0,
+              player_session: nil,
+              options: []
   end
 
   @logo "                            Simponic's                           
@@ -20,31 +23,70 @@ defmodule Chessh.SSH.Client.Menu do
   use Chessh.SSH.Client.Screen
 
   def init([%State{} = state | _]) do
-    {:ok, state}
+    {:ok, %State{state | options: options(state)}}
   end
 
-  @options [
-    {"Start A Game", {Chessh.SSH.Client.Board, %Chessh.SSH.Client.Board.State{}}},
-    {"Join A Game", {}},
-    {"My Games", {}},
-    {"Settings", {}},
-    {"Help", {}}
-  ]
+  def options(%State{player_session: player_session}) do
+    current_games =
+      Repo.all(
+        from(g in Game,
+          where: g.light_player_id == ^player_session.player_id,
+          or_where: g.dark_player_id == ^player_session.player_id,
+          where: g.status == :continue
+        )
+      )
 
-  def input(width, height, action, %State{client_pid: client_pid, selected: selected} = state) do
+    joinable_games =
+      Repo.all(
+        from(g in Game,
+          where: is_nil(g.light_player_id),
+          or_where: is_nil(g.dark_player_id)
+        )
+      )
+
+    [
+      {"Start A Game As Light",
+       {Chessh.SSH.Client.Game,
+        %Chessh.SSH.Client.Game.State{player_session: player_session, color: :light}}},
+      {"Start A Game As Dark",
+       {Chessh.SSH.Client.Game,
+        %Chessh.SSH.Client.Game.State{player_session: player_session, color: :dark}}}
+    ] ++
+      Enum.map(current_games, fn game ->
+        {"Current Game - #{game.id}",
+         {Chessh.SSH.Client.Game,
+          %Chessh.SSH.Client.Game.State{player_session: player_session, game: game}}}
+      end) ++
+      Enum.map(joinable_games, fn game ->
+        {"Joinable Game - #{game.id}",
+         {Chessh.SSH.Client.Game,
+          %Chessh.SSH.Client.Game.State{player_session: player_session, game: game}}}
+      end) ++
+      [
+        {"Settings", {}},
+        {"Help", {}}
+      ]
+  end
+
+  def input(
+        width,
+        height,
+        action,
+        %State{options: options, client_pid: client_pid, selected: selected} = state
+      ) do
     new_state =
       case(action) do
         :up ->
           %State{
             state
-            | selected: Utils.wrap_around(selected, -1, length(@options))
+            | selected: Utils.wrap_around(selected, -1, length(options))
           }
 
         :down ->
-          %State{state | selected: Utils.wrap_around(selected, 1, length(@options))}
+          %State{state | selected: Utils.wrap_around(selected, 1, length(options))}
 
         :return ->
-          {_option, {module, state}} = Enum.at(@options, selected)
+          {_option, {module, state}} = Enum.at(options, selected)
           send(client_pid, {:set_screen_process, module, state})
           state
 
@@ -67,7 +109,7 @@ defmodule Chessh.SSH.Client.Menu do
   defp render_state(
          width,
          height,
-         %State{selected: selected}
+         %State{options: options, selected: selected} = state
        ) do
     logo_lines = String.split(@logo, "\n")
     {logo_width, logo_height} = Utils.text_dim(@logo)
@@ -84,7 +126,7 @@ defmodule Chessh.SSH.Client.Menu do
         end
       ) ++
       Enum.flat_map(
-        Enum.zip(0..(length(@options) - 1), @options),
+        Enum.zip(0..(length(options) - 1), options),
         fn {i, {option, _}} ->
           [
             ANSI.cursor(y + length(logo_lines) + i + 1, x),

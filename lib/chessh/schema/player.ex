@@ -1,6 +1,7 @@
 defmodule Chessh.Player do
   use Ecto.Schema
   import Ecto.Changeset
+  alias Chessh.{Key, Game}
 
   @derive {Inspect, except: [:password]}
   schema "players" do
@@ -11,7 +12,9 @@ defmodule Chessh.Player do
 
     field(:authentications, :integer, default: 0)
 
-    has_many(:keys, Chessh.Key)
+    has_many(:keys, Key)
+    has_many(:light_games, Game, foreign_key: :light_player_id, references: :id)
+    has_many(:dark_games, Game, foreign_key: :dark_player_id, references: :id)
 
     timestamps()
   end
