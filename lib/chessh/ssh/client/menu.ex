@@ -109,7 +109,7 @@ defmodule Chessh.SSH.Client.Menu do
   defp render_state(
          width,
          height,
-         %State{options: options, selected: selected} = state
+         %State{options: options, selected: selected}
        ) do
     logo_lines = String.split(@logo, "\n")
     {logo_width, logo_height} = Utils.text_dim(@logo)
