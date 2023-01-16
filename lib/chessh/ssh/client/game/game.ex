@@ -15,7 +15,7 @@ defmodule Chessh.SSH.Client.Game do
               width: 0,
               height: 0,
               flipped: false,
-              color: :light,
+              color: nil,
               player_session: nil
   end
 
@@ -76,7 +76,7 @@ defmodule Chessh.SSH.Client.Game do
             do: Game.changeset(game, %{dark_player_id: player_session.player_id})
       end
 
-    {status, maybe_new_game} =
+    {status, maybe_joined_game} =
       if maybe_changeset do
         maybe_changeset
         |> Repo.update()
@@ -84,21 +84,24 @@ defmodule Chessh.SSH.Client.Game do
         {:undefined, nil}
       end
 
-    new_game =
-      case {status, maybe_new_game} do
-        {:ok, g} -> g
-        _ -> game
-      end
+    if status == :ok && maybe_joined_game do
+      :syn.publish(:games, {:game, game_id}, :player_joined)
+    end
 
     binbo_pid = initialize_game(game_id, fen)
     send(client_pid, {:send_to_ssh, Utils.clear_codes()})
 
-    {:ok,
-     %State{
-       state
-       | binbo_pid: binbo_pid,
-         color: if(new_game.light_player_id == player_session.player_id, do: :light, else: :dark)
-     }}
+    new_game = Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player])
+
+    new_state = %State{
+      state
+      | binbo_pid: binbo_pid,
+        color: if(new_game.light_player_id == player_session.player_id, do: :light, else: :dark),
+        game: new_game
+    }
+
+    Logger.debug("asdfaldfjalsdkfjal #{inspect(new_state)}")
+    {:ok, new_state}
   end
 
   def init([
@@ -106,7 +109,7 @@ defmodule Chessh.SSH.Client.Game do
           state
         | _
       ]) do
-    {:ok, %Game{id: game_id, fen: fen} = game} =
+    {:ok, %Game{id: game_id, fen: fen}} =
       Game.changeset(
         %Game{},
         Map.merge(
@@ -127,7 +130,12 @@ defmodule Chessh.SSH.Client.Game do
     binbo_pid = initialize_game(game_id, fen)
     send(client_pid, {:send_to_ssh, Utils.clear_codes()})
 
-    {:ok, %State{state | game: game, binbo_pid: binbo_pid}}
+    {:ok,
+     %State{
+       state
+       | game: Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player]),
+         binbo_pid: binbo_pid
+     }}
   end
 
   def handle_info(
@@ -136,9 +144,23 @@ defmodule Chessh.SSH.Client.Game do
       ) do
     :binbo.move(binbo_pid, move)
 
-    new_state = %State{state | game: Repo.get(Game, game_id)}
+    new_state = %State{
+      state
+      | game: Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player])
+    }
+
     send(client_pid, {:send_to_ssh, render_state(new_state)})
 
+    {:noreply, new_state}
+  end
+
+  def handle_info(
+        :player_joined,
+        %State{client_pid: client_pid, game: %Game{id: game_id}} = state
+      ) do
+    game = Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player])
+    new_state = %State{state | game: game}
+    send(client_pid, {:send_to_ssh, render_state(new_state)})
     {:noreply, new_state}
   end
 
