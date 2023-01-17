@@ -294,39 +294,41 @@ defmodule Chessh.SSH.Client.Game do
            attempted_move
          ) do
       {:ok, status} ->
+        {:ok, fen} = :binbo.get_fen(binbo_pid)
+
+        default_changeset = %{
+          fen: fen,
+          moves: game.moves + 1,
+          turn: if(game.turn == :dark, do: :light, else: :dark)
+        }
+
         case status do
           :continue ->
-            {:ok, fen} = :binbo.get_fen(binbo_pid)
-
             {:ok, _new_game} =
               Game.changeset(
                 game,
-                %{
-                  fen: fen,
-                  moves: game.moves + 1,
-                  turn: if(game.turn == :dark, do: :light, else: :dark)
-                }
+                default_changeset
               )
               |> Repo.update()
 
           {:draw, _} ->
             Game.changeset(
               game,
-              %{status: :draw}
+              Map.merge(default_changeset, %{status: :draw})
             )
             |> Repo.update()
 
           {:checkmate, :white_wins} ->
             Game.changeset(
               game,
-              %{status: :winner, winner: :light}
+              Map.merge(default_changeset, %{status: :winner, winner: :light})
             )
             |> Repo.update()
 
           {:checkmate, :black_wins} ->
             Game.changeset(
               game,
-              %{status: :winner, winner: :dark}
+              Map.merge(default_changeset, %{status: :winner, winner: :dark})
             )
             |> Repo.update()
         end
