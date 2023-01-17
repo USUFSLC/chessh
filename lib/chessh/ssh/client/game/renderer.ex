@@ -66,7 +66,9 @@ defmodule Chessh.SSH.Client.Game.Renderer do
           id: game_id,
           dark_player: %Player{username: dark_player},
           light_player: %Player{username: light_player},
-          turn: turn
+          turn: turn,
+          status: status,
+          winner: winner
         }
       }) do
     rendered = [
@@ -78,7 +80,16 @@ defmodule Chessh.SSH.Client.Game.Renderer do
           "#{ANSI.default_color()} --vs-- ",
           ANSI.format_fragment([@dark_piece_color, dark_player]),
           ANSI.default_color(),
-          ", #{ANSI.format_fragment([if(turn == :light, do: @light_piece_color, else: @dark_piece_color), if(turn == :dark, do: dark_player, else: light_player)])} to move"
+          case status do
+            :continue ->
+              ", #{ANSI.format_fragment([if(turn == :light, do: @light_piece_color, else: @dark_piece_color), if(turn == :dark, do: dark_player, else: light_player)])} to move"
+
+            :draw ->
+              "ended in a draw"
+
+            :winner ->
+              ", #{ANSI.format_fragment([if(winner == :light, do: @light_piece_color, else: @dark_piece_color), if(winner == :dark, do: dark_player, else: light_player)])} won!"
+          end
         ],
         ""
       )

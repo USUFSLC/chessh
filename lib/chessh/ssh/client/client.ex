@@ -62,6 +62,11 @@ defmodule Chessh.SSH.Client do
   end
 
   @impl true
+  def handle_info({:go_back_one_screen, previous_state}, %State{} = state) do
+    {:noreply, go_back_one_screen(state, previous_state)}
+  end
+
+  @impl true
   def handle_info(:quit, %State{} = state) do
     {:stop, :normal, state}
   end
@@ -92,8 +97,7 @@ defmodule Chessh.SSH.Client do
         %State{
           width: width,
           height: height,
-          screen_pid: screen_pid,
-          screen_state_initials: [_ | rest_initial]
+          screen_pid: screen_pid
         } = state
       ) do
     case keymap(data) do
@@ -101,10 +105,7 @@ defmodule Chessh.SSH.Client do
         {:stop, :normal, state}
 
       :previous_screen ->
-        [{prev_module, prev_state_initial} | _] = rest_initial
-        send(self(), {:set_screen_process, prev_module, prev_state_initial})
-
-        {:noreply, %State{state | screen_state_initials: rest_initial}}
+        {:noreply, go_back_one_screen(state)}
 
       action ->
         send(screen_pid, {:input, width, height, action})
@@ -185,5 +186,26 @@ defmodule Chessh.SSH.Client do
     else
       send(screen_pid, {:render, width, height})
     end
+  end
+
+  defp go_back_one_screen(
+         %State{
+           screen_state_initials: [_ | rest_initial]
+         } = state,
+         previous_state
+       ) do
+    [{prev_module, prev_state_initial} | _] = rest_initial
+
+    send(
+      self(),
+      {:set_screen_process, prev_module,
+       if(is_nil(previous_state), do: prev_state_initial, else: previous_state)}
+    )
+
+    %State{state | screen_state_initials: rest_initial}
+  end
+
+  defp go_back_one_screen(%State{} = state) do
+    go_back_one_screen(state, nil)
   end
 end

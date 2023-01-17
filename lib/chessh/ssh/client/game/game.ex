@@ -100,7 +100,6 @@ defmodule Chessh.SSH.Client.Game do
         game: new_game
     }
 
-    Logger.debug("asdfaldfjalsdkfjal #{inspect(new_state)}")
     {:ok, new_state}
   end
 
@@ -118,10 +117,7 @@ defmodule Chessh.SSH.Client.Game do
             else: %{dark_player_id: player_session.player_id}
           ),
           %{
-            fen: @default_fen,
-            increment_sec: 3,
-            light_clock_ms: 5 * 60 * 1000,
-            dark_clock_ms: 5 * 60 * 1000
+            fen: @default_fen
           }
         )
       )
@@ -172,7 +168,8 @@ defmodule Chessh.SSH.Client.Game do
           move_from: move_from,
           cursor: %{x: cursor_x, y: cursor_y} = cursor,
           client_pid: client_pid,
-          flipped: flipped
+          flipped: flipped,
+          binbo_pid: binbo_pid
         } = state
       ) do
     new_cursor =
@@ -196,10 +193,6 @@ defmodule Chessh.SSH.Client.Game do
         {move_from, nil}
       end
 
-    if move_from && move_to do
-      attempt_move(move_from, move_to, state)
-    end
-
     new_state = %State{
       state
       | cursor: new_cursor,
@@ -212,6 +205,52 @@ defmodule Chessh.SSH.Client.Game do
         height: height,
         flipped: if(action == "f", do: !flipped, else: flipped)
     }
+
+    if move_from && move_to do
+      maybe_flipped_from = if flipped, do: flip(move_from), else: move_from
+      maybe_flipped_to = if flipped, do: flip(move_to), else: move_to
+
+      piece_type =
+        :binbo_position.get_piece(
+          :binbo_board.notation_to_index(Renderer.to_chess_coord(maybe_flipped_from)),
+          :binbo.game_state(binbo_pid)
+        )
+
+      promotion_possible =
+        case piece_type do
+          1 ->
+            # Light pawn
+            {y, _} = maybe_flipped_to
+            y == 0
+
+          17 ->
+            # Dark pawn
+            {y, _} = maybe_flipped_to
+            y == Renderer.chess_board_height() - 1
+
+          _ ->
+            false
+        end
+
+      if promotion_possible do
+        send(
+          client_pid,
+          {:set_screen_process, Chessh.SSH.Client.Game.PromotionScreen,
+           %Chessh.SSH.Client.Game.PromotionScreen.State{
+             client_pid: client_pid,
+             game_pid: self(),
+             game_state: new_state
+           }}
+        )
+
+        receive do
+          {:promotion, promotion} ->
+            attempt_move(move_from, move_to, state, promotion)
+        end
+      else
+        attempt_move(move_from, move_to, state)
+      end
+    end
 
     send(client_pid, {:send_to_ssh, render_state(new_state)})
     new_state
@@ -226,40 +265,81 @@ defmodule Chessh.SSH.Client.Game do
   defp attempt_move(
          from,
          to,
+         %State{} = state
+       ),
+       do: attempt_move(from, to, state, nil)
+
+  defp attempt_move(
+         from,
+         to,
          %State{
            game: %Game{id: game_id, turn: turn},
            binbo_pid: binbo_pid,
            flipped: flipped,
            color: turn
-         }
+         },
+         promotion
        ) do
     attempted_move =
-      if flipped,
+      if(flipped,
         do: "#{Renderer.to_chess_coord(flip(from))}#{Renderer.to_chess_coord(flip(to))}",
         else: "#{Renderer.to_chess_coord(from)}#{Renderer.to_chess_coord(to)}"
+      ) <>
+        if(promotion, do: promotion, else: "")
 
-    case :binbo.move(binbo_pid, attempted_move) do
-      {:ok, :continue} ->
-        {:ok, fen} = :binbo.get_fen(binbo_pid)
-        game = Repo.get(Game, game_id)
+    game = Repo.get(Game, game_id)
 
-        {:ok, _new_game} =
-          Game.changeset(game, %{
-            fen: fen,
-            moves: game.moves + 1,
-            turn: if(game.turn == :dark, do: :light, else: :dark),
-            last_move: DateTime.utc_now()
-          })
-          |> Repo.update()
+    case :binbo.move(
+           binbo_pid,
+           attempted_move
+         ) do
+      {:ok, status} ->
+        case status do
+          :continue ->
+            {:ok, fen} = :binbo.get_fen(binbo_pid)
+
+            {:ok, _new_game} =
+              Game.changeset(
+                game,
+                %{
+                  fen: fen,
+                  moves: game.moves + 1,
+                  turn: if(game.turn == :dark, do: :light, else: :dark)
+                }
+              )
+              |> Repo.update()
+
+          {:draw, _} ->
+            Game.changeset(
+              game,
+              %{status: :draw}
+            )
+            |> Repo.update()
+
+          {:checkmate, :white_wins} ->
+            Game.changeset(
+              game,
+              %{status: :winner, winner: :light}
+            )
+            |> Repo.update()
+
+          {:checkmate, :black_wins} ->
+            Game.changeset(
+              game,
+              %{status: :winner, winner: :dark}
+            )
+            |> Repo.update()
+        end
 
         :syn.publish(:games, {:game, game_id}, {:new_move, attempted_move})
 
-      _ ->
+      x ->
+        Logger.debug(inspect(x))
         nil
     end
   end
 
-  defp attempt_move(_, _, _) do
+  defp attempt_move(_, _, _, _) do
     Logger.debug("No matching clause for move attempt - must be illegal?")
     nil
   end

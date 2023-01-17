@@ -3,11 +3,6 @@ defmodule Chessh.Repo.Migrations.CreateGames do
 
   def change do
     create table(:games) do
-      add(:increment_sec, :integer)
-      add(:light_clock_ms, :integer)
-      add(:dark_clock_ms, :integer)
-      add(:last_move, :utc_datetime_usec, null: true)
-
       add(:fen, :string)
       add(:moves, :integer, default: 0)
 
