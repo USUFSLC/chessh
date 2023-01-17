@@ -1,7 +1,7 @@
-defmodule Chessh.SSH.Client.Board.Renderer do
+defmodule Chessh.SSH.Client.Game.Renderer do
   alias IO.ANSI
-  alias Chessh.Utils
-  alias Chessh.SSH.Client.Board
+  alias Chessh.{Utils, Player}
+  alias Chessh.SSH.Client.Game
   require Logger
 
   @chess_board_height 8
@@ -25,23 +25,85 @@ defmodule Chessh.SSH.Client.Board.Renderer do
     "#{List.to_string([?a + x])}#{@chess_board_height - y}"
   end
 
-  def render_board_state(fen, %Board.State{
+  def render_board_state(
+        fen,
+        %Game.State{
+          game:
+            %Chessh.Game{
+              light_player: light_player
+            } = game
+        } = state
+      )
+      when is_nil(light_player) do
+    render_board_state(fen, %Game.State{
+      state
+      | game: %Chessh.Game{game | light_player: %Player{username: "(no opponent)"}}
+    })
+  end
+
+  def render_board_state(
+        fen,
+        %Game.State{
+          game:
+            %Chessh.Game{
+              dark_player: dark_player
+            } = game
+        } = state
+      )
+      when is_nil(dark_player) do
+    render_board_state(fen, %Game.State{
+      state
+      | game: %Chessh.Game{game | dark_player: %Player{username: "(no opponent)"}}
+    })
+  end
+
+  def render_board_state(fen, %Game.State{
         width: _width,
         height: _height,
         highlighted: highlighted,
-        flipped: flipped
+        flipped: flipped,
+        game: %Chessh.Game{
+          id: game_id,
+          dark_player: %Player{username: dark_player},
+          light_player: %Player{username: light_player},
+          turn: turn,
+          status: status,
+          winner: winner
+        }
       }) do
-    board =
-      draw_board(
-        fen,
-        {@tile_width, @tile_height},
-        highlighted,
-        flipped
+    rendered = [
+      Enum.join(
+        [
+          ANSI.clear_line(),
+          "Game #{game_id}: ",
+          ANSI.format_fragment([@light_piece_color, light_player]),
+          "#{ANSI.default_color()} --vs-- ",
+          ANSI.format_fragment([@dark_piece_color, dark_player]),
+          ANSI.default_color(),
+          case status do
+            :continue ->
+              ", #{ANSI.format_fragment([if(turn == :light, do: @light_piece_color, else: @dark_piece_color), if(turn == :dark, do: dark_player, else: light_player)])} to move"
+
+            :draw ->
+              "ended in a draw"
+
+            :winner ->
+              ", #{ANSI.format_fragment([if(winner == :light, do: @light_piece_color, else: @dark_piece_color), if(winner == :dark, do: dark_player, else: light_player)])} won!"
+          end
+        ],
+        ""
       )
+      | draw_board(
+          fen,
+          {@tile_width, @tile_height},
+          highlighted,
+          flipped
+        )
+    ]
 
     [ANSI.home()] ++
       Enum.map(
-        Enum.zip(1..length(board), board),
+        Enum.zip(1..length(rendered), rendered),
         fn {i, line} ->
           [ANSI.cursor(i, 0), line]
         end

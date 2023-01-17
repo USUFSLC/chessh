@@ -144,7 +144,6 @@ defmodule Chessh.SSH.Tui do
         {:ssh_cm, connection_handler, {:shell, channel_id, want_reply?}},
         %{width: width, height: height, player_session: player_session} = state
       ) do
-    Logger.debug("Session #{player_session.id} requested shell")
     :ssh_connection.reply_request(connection_handler, want_reply?, :success, channel_id)
 
     {:ok, client_pid} =
@@ -159,47 +158,6 @@ defmodule Chessh.SSH.Tui do
 
     send(client_pid, :refresh)
     {:ok, %State{state | client_pid: client_pid}}
-  end
-
-  def handle_ssh_msg(
-        {:ssh_cm, connection_handler, {:exec, channel_id, want_reply?, cmd}},
-        %State{} = state
-      ) do
-    :ssh_connection.reply_request(connection_handler, want_reply?, :success, channel_id)
-    Logger.debug("EXEC #{cmd}")
-    {:ok, state}
-  end
-
-  def handle_ssh_msg(
-        {:ssh_cm, _connection_handler, {:eof, _channel_id}},
-        %State{} = state
-      ) do
-    Logger.debug("EOF")
-    {:ok, state}
-  end
-
-  def handle_ssh_msg(
-        {:ssh_cm, _connection_handler, {:signal, _channel_id, signal}},
-        %State{} = state
-      ) do
-    Logger.debug("SIGNAL #{signal}")
-    {:ok, state}
-  end
-
-  def handle_ssh_msg(
-        {:ssh_cm, _connection_handler, {:exit_signal, channel_id, signal, err, lang}},
-        %State{} = state
-      ) do
-    Logger.debug("EXIT SIGNAL #{signal} #{err} #{lang}")
-    {:stop, channel_id, state}
-  end
-
-  def handle_ssh_msg(
-        {:ssh_cm, _connection_handler, {:exit_STATUS, channel_id, status}},
-        %State{} = state
-      ) do
-    Logger.debug("EXIT STATUS #{status}")
-    {:stop, channel_id, state}
   end
 
   def handle_ssh_msg(
