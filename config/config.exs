@@ -18,4 +18,11 @@ config :chessh, RateLimits,
   player_session_message_burst_ms: 500,
   player_session_message_burst_rate: 8
 
+config :chessh, Web,
+  port: 8080,
+  github_oauth_login_url: "https://github.com/login/oauth/access_token",
+  github_user_api_url: "https://api.github.com/user"
+
+config :joken, default_signer: "secret"
+
 import_config "#{config_env()}.exs"

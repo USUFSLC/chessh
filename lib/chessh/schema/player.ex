@@ -5,6 +5,8 @@ defmodule Chessh.Player do
 
   @derive {Inspect, except: [:password]}
   schema "players" do
+    field(:github_id, :integer)
+
     field(:username, :string)
 
     field(:password, :string, virtual: true)
@@ -26,7 +28,7 @@ defmodule Chessh.Player do
 
   def registration_changeset(player, attrs, opts \\ []) do
     player
-    |> cast(attrs, [:username, :password])
+    |> cast(attrs, [:username, :password, :github_id])
     |> validate_username()
     |> validate_password(opts)
   end
