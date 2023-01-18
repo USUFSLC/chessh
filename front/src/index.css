@@ -1,10 +1,16 @@
 :root {
   --main-bg-color: #282828;
-  --primary-text-color: #fafafa;
-  --success-color: #58df58;
-  --success-color-hover: #a8dfa8;
-  --gold-color: #ffd700;
-  --gold-color-hover: #ffd7aa;
+  --primary-text-color: #ebdbb2;
+  --success-color: #689d6a;
+  --success-color-hover: #8ec07c;
+  --gold-color: #d79921;
+  --gold-color-hover: #fabd2f;
+  --blue-color: #458488;
+  --blue-color-hover: #83a598;
+  --purple-color: #b16286;
+  --purple-color-hover: #d3869b;
+  --red-color: #cc241d;
+  --red-color-hover: #fb4934;
 }
 
 @font-face {
@@ -54,17 +60,17 @@ body {
   padding: 0.5rem;
   padding-left: 2rem;
   padding-right: 2rem;
-  border: var(--primary-text-color) solid 1px;
+  border: var(--purple-color) solid 1px;
 }
 
 .link {
   text-decoration: underline;
   font-size: 1.25rem;
-  color: var(--primary-text-color);
+  color: var(--success-color);
 }
 
 .link:hover {
-  color: var(--gold-color);
+  color: var(--success-color-hover);
   text-decoration: none;
 }
 

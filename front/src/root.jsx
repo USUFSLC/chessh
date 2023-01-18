@@ -25,7 +25,7 @@ export const Root = () => {
                   Keys
                 </Link>
                 <Link
-                  className="link"
+                  className="button"
                   onClick={() => setSignedIn(false)}
                   to="/"
                 >
@@ -41,9 +41,9 @@ export const Root = () => {
                     )
                   }
                   href={process.env.REACT_APP_GITHUB_OAUTH}
-                  className="link"
+                  className="button"
                 >
-                  Login w/ GitHub
+                  🐙 Login w/ GitHub 🐙
                 </a>
               </>
             )}

@@ -2,14 +2,8 @@ import { useEffect, useCallback } from "react";
 import { useAuthContext } from "../context/auth_context";
 
 export const AuthSuccessful = () => {
-  const {
-    username,
-    signedIn,
-    setSignedIn,
-    setSessionOver,
-    setUserId,
-    setUsername,
-  } = useAuthContext();
+  const { username, signedIn, setSignedIn, setUserId, setUsername } =
+    useAuthContext();
 
   const fetchMyself = useCallback(
     () =>
@@ -22,7 +16,7 @@ export const AuthSuccessful = () => {
           setUserId(player.id);
           setUsername(player.username);
         }),
-    [setSessionOver, setSignedIn, setUserId, setUsername]
+    [setSignedIn, setUserId, setUsername]
   );
 
   useEffect(() => {
