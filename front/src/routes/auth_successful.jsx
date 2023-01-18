@@ -1,4 +1,6 @@
 import { useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
+
 import { useAuthContext } from "../context/auth_context";
 
 export const AuthSuccessful = () => {
@@ -23,10 +25,22 @@ export const AuthSuccessful = () => {
     fetchMyself();
   }, [fetchMyself]);
 
+  if (signedIn) {
+    return (
+      <>
+        <h1>Authentication Successful</h1>
+        <div>
+          <span>Hello there, {username || ""}! </span>
+          <Link to="/home" className="button">
+            Go Home{" "}
+          </Link>
+        </div>
+      </>
+    );
+  }
   return (
     <>
-      <h1>Successful Auth</h1>
-      {signedIn ? <p>Hello there, {username || ""}</p> : <p>Loading...</p>}
+      <p>Loading...</p>
     </>
   );
 };

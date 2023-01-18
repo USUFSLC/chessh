@@ -10,6 +10,11 @@ module.exports = function (app) {
         pathRewrite: (path, _req) => {
           return path.replace("/api", "");
         },
+        onProxyRes: function (proxyRes, req, res) {
+          proxyRes.headers["Access-Control-Allow-Origin"] = "*";
+          proxyRes.headers["Access-Control-Allow-Methods"] =
+            "GET,PUT,POST,DELETE,PATCH,OPTIONS";
+        },
       })
     );
   }

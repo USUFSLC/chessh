@@ -27,6 +27,7 @@ body {
 }
 
 .button {
+  cursor: pointer;
   flex-shrink: 0;
   color: var(--main-bg-color);
   text-decoration: none;
@@ -34,6 +35,8 @@ body {
   border: var(--primary-text-color) solid 1px;
   background-color: var(--success-color);
   padding: 0.5rem;
+
+  font-family: "DM Mono";
 }
 .button:hover {
   background-color: var(--success-color-hover);
@@ -43,6 +46,13 @@ body {
 }
 .gold:hover {
   background-color: var(--gold-color-hover);
+}
+.red {
+  color: var(--primary-text-color);
+  background-color: var(--red-color);
+}
+.red:hover {
+  background-color: var(--red-color-hover);
 }
 
 .logo {
@@ -63,15 +73,18 @@ body {
   border: var(--purple-color) solid 1px;
 }
 
-.link {
+a {
   text-decoration: underline;
-  font-size: 1.25rem;
   color: var(--success-color);
 }
 
-.link:hover {
-  color: var(--success-color-hover);
+a:hover {
+  background-color: var(--success-color-hover);
   text-decoration: none;
+}
+
+.link {
+  font-size: 1.25rem;
 }
 
 .nav {
@@ -118,4 +131,24 @@ body {
   -moz-transform: translateX(-50%) translateY(-50%);
   -webkit-transform: translateX(-50%) translateY(-50%);
   transform: translateX(-50%) translateY(-50%);
+}
+
+.key-card {
+  display: flex;
+  justify-content: space-around;
+  flex-direction: row;
+  align-items: center;
+  padding: 2rem;
+  border-radius: 12px;
+  border: solid 1px var(--gold-color);
+  margin-top: 12px;
+}
+
+@media screen and (max-width: 680px) {
+  .container {
+    width: 95%;
+  }
+  .navbar {
+    flex-direction: column;
+  }
 }

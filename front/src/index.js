@@ -6,6 +6,7 @@ import { AuthProvider } from "./context/auth_context";
 import { Root } from "./root";
 import { Demo } from "./routes/demo";
 import { Home } from "./routes/home";
+import { Keys } from "./routes/keys";
 import { AuthSuccessful } from "./routes/auth_successful";
 
 import "./index.css";
@@ -26,12 +27,16 @@ const router = createBrowserRouter([
         element: <Home />,
       },
       {
-        path: "auth-successful",
-        element: <AuthSuccessful />,
+        path: "keys",
+        element: <Keys />,
       },
       {
-        path: "keys",
+        path: "faq",
         element: <Home />,
+      },
+      {
+        path: "auth-successful",
+        element: <AuthSuccessful />,
       },
     ],
   },

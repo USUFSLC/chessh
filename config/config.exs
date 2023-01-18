@@ -7,7 +7,6 @@ config :hammer,
 config :chessh,
   ecto_repos: [Chessh.Repo],
   key_dir: Path.join(Path.dirname(__DIR__), "priv/keys"),
-  port: 42_069,
   max_sessions: 255,
   ascii_chars_json_file: Path.join(Path.dirname(__DIR__), "priv/ascii_chars.json")
 

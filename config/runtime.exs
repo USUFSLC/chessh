@@ -1,5 +1,8 @@
 import Config
 
+config :chessh,
+  port: String.to_integer(System.get_env("SSH_PORT", "42069"))
+
 config :chessh, Web,
   github_client_id: System.get_env("GITHUB_CLIENT_ID"),
   github_client_secret: System.get_env("GITHUB_CLIENT_SECRET"),

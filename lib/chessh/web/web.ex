@@ -118,13 +118,19 @@ defmodule Chessh.Web.Endpoint do
     |> send_resp(status, Jason.encode!(body))
   end
 
+  get "/player/logout" do
+    conn
+    |> delete_resp_cookie("jwt")
+    |> send_resp(200, Jason.encode!(%{success: true}))
+  end
+
   post "/player/keys" do
     player = get_player_from_jwt(conn)
 
     {status, body} =
       case conn.body_params do
         %{"key" => key, "name" => name} ->
-          case Key.changeset(%Key{}, %{player_id: player.id, key: key, name: name})
+          case Key.changeset(%Key{player_id: player.id}, %{key: key, name: name})
                |> Repo.insert() do
             {:ok, _new_key} ->
               {

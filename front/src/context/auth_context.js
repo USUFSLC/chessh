@@ -22,13 +22,6 @@ export const AuthProvider = ({ children }) => {
   const [username, setUsername] = useState(null);
 
   useEffect(() => {
-    if (!signedIn) {
-      setUsername(null);
-      setUserId(null);
-    }
-  }, [signedIn]);
-
-  useEffect(() => {
     if (userId) {
       localStorage.setItem("userId", userId.toString());
     }
