@@ -202,8 +202,6 @@ defmodule Chessh.Web.Endpoint do
   end
 
   delete "/keys/:id" do
-    %{"id" => key_id} = conn.path_params
-
     jwt =
       Enum.find_value(conn.req_headers, fn {header, value} ->
         if header === "authorization", do: value
@@ -211,6 +209,7 @@ defmodule Chessh.Web.Endpoint do
 
     {:ok, %{"uid" => uid}} = Token.verify_and_validate(jwt)
 
+    %{"id" => key_id} = conn.path_params
     key = Repo.get(Key, key_id)
 
     {status, body} =

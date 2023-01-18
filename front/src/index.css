@@ -1,0 +1,115 @@
+:root {
+  --main-bg-color: #282828;
+  --primary-text-color: #fafafa;
+  --success-color: #58df58;
+  --success-color-hover: #a8dfa8;
+  --gold-color: #ffd700;
+  --gold-color-hover: #ffd7aa;
+}
+
+@font-face {
+  font-family: "DM Mono";
+  src: url("./assets/DMMono-Light.ttf");
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--main-bg-color);
+  font-family: "DM Mono";
+  color: var(--primary-text-color);
+}
+
+.button {
+  flex-shrink: 0;
+  color: var(--main-bg-color);
+  text-decoration: none;
+  border-radius: 8px;
+  border: var(--primary-text-color) solid 1px;
+  background-color: var(--success-color);
+  padding: 0.5rem;
+}
+.button:hover {
+  background-color: var(--success-color-hover);
+}
+.gold {
+  background-color: var(--gold-color);
+}
+.gold:hover {
+  background-color: var(--gold-color-hover);
+}
+
+.logo {
+  width: 6rem;
+  height: 6rem;
+}
+
+.navbar {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+
+  border-radius: 12px;
+  padding: 0.5rem;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  border: var(--primary-text-color) solid 1px;
+}
+
+.link {
+  text-decoration: underline;
+  font-size: 1.25rem;
+  color: var(--primary-text-color);
+}
+
+.link:hover {
+  color: var(--gold-color);
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  gap: 2rem;
+}
+
+.flex-row-around {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  gap: 2rem;
+}
+
+.container {
+  padding-top: 1rem;
+  max-width: 1200px;
+  width: 80%;
+
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.demo-container {
+  max-width: 900px;
+  width: 80%;
+
+  border: 1px solid #b16286;
+  border-radius: 8px;
+  margin: 0;
+  padding: 24px;
+
+  background-color: var(--main-bg-color);
+
+  box-shadow: rgb(0, 0, 0, 0.6) 6px 45px 45px -12px;
+
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -moz-transform: translateX(-50%) translateY(-50%);
+  -webkit-transform: translateX(-50%) translateY(-50%);
+  transform: translateX(-50%) translateY(-50%);
+}
