@@ -3,7 +3,12 @@ import Config
 config :chessh, Web,
   github_client_id: System.get_env("GITHUB_CLIENT_ID"),
   github_client_secret: System.get_env("GITHUB_CLIENT_SECRET"),
-  github_user_agent: System.get_env("GITHUB_USER_AGENT")
+  github_user_agent: System.get_env("GITHUB_USER_AGENT"),
+  client_redirect_after_successful_sign_in:
+    System.get_env("CLIENT_REDIRECT_AFTER_OAUTH", "http://localhost:3000")
+
+config :joken,
+  default_signer: System.get_env("JWT_SECRET")
 
 if config_env() == :prod do
   database_url =

@@ -26,14 +26,14 @@ export const Demo = () => {
       );
       setRenderedPlayer(true);
     }
-  }, [player]);
+  }, [renderedPlayer, player]);
 
   return (
-    <div class="demo-container">
+    <div className="demo-container">
       <h1>
         Welcome to <span style={{ color: "green" }}>> CheSSH!</span>
       </h1>
-      <div class="flex-row-around">
+      <div className="flex-row-around">
         <p>
           CheSSH is a multiplayer, scalable, free, open source, and potentially
           passwordless game of Chess over the SSH protocol.
@@ -42,6 +42,7 @@ export const Demo = () => {
           className="button gold"
           href="https://github.com/Simponic/chessh"
           target="_blank"
+          rel="noreferrer"
         >
           🌟 Star 🌟
         </a>
@@ -49,10 +50,10 @@ export const Demo = () => {
       <hr />
       <div ref={player} id={demoCastElementId} />
       <hr />
-      <div class="flex-row-around">
+      <div className="flex-row-around">
         <h3>Would you like to play a game?</h3>
         <Link className="button" to="/home">
-          Yes, Joshua ↝
+          Yes, Joshua ⇒
         </Link>
       </div>
     </div>

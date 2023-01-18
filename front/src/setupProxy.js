@@ -1,12 +1,15 @@
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const { createProxyMiddleware } = require("http-proxy-middleware");
 
-module.exports = function(app) {
-  if (process.env.NODE_ENV != 'production') {
+module.exports = function (app) {
+  if (process.env.NODE_ENV != "production") {
     app.use(
-      '/api',
+      "/api",
       createProxyMiddleware({
-        target: 'http://localhost:8080',
+        target: "http://localhost:8080",
         changeOrigin: true,
+        pathRewrite: (path, _req) => {
+          return path.replace("/api", "");
+        },
       })
     );
   }

@@ -36,59 +36,27 @@ defmodule Chessh.Web.Endpoint do
       end
 
     {status, body} =
-      case resp do
-        %{"access_token" => access_token} ->
-          case :httpc.request(
-                 :get,
-                 {String.to_charlist(github_user_api_url),
-                  [
-                    {'Authorization', String.to_charlist("Bearer #{access_token}")},
-                    {'User-Agent', github_user_agent}
-                  ]},
-                 [],
-                 []
-               ) do
-            {:ok, {{_, 200, 'OK'}, _, user_details}} ->
-              %{"login" => username, "id" => github_id} =
-                Jason.decode!(String.Chars.to_string(user_details))
+      create_player_from_github_response(resp, github_user_api_url, github_user_agent)
 
-              %Player{id: id} =
-                Repo.insert!(%Player{github_id: github_id, username: username},
-                  on_conflict: [set: [github_id: github_id]],
-                  conflict_target: :github_id
-                )
+    case body do
+      %{jwt: token} ->
+        client_redirect_location =
+          Application.get_env(:chessh, Web)[:client_redirect_after_successful_sign_in]
 
-              {200,
-               %{
-                 success: true,
-                 jwt:
-                   Token.generate_and_sign!(%{
-                     "uid" => id
-                   })
-               }}
+        conn
+        |> put_resp_cookie("jwt", token)
+        |> put_resp_header("location", client_redirect_location)
+        |> send_resp(301, '')
 
-            _ ->
-              {400, %{errors: "Access token was incorrect. Try again."}}
-          end
-
-        _ ->
-          {400, %{errors: "Failed to retrieve token from GitHub. Try again."}}
-      end
-
-    conn
-    |> put_resp_content_type("application/json")
-    |> send_resp(status, Jason.encode!(body))
+      _ ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(status, Jason.encode!(body))
+    end
   end
 
   put "/player/password" do
-    jwt =
-      Enum.find_value(conn.req_headers, fn {header, value} ->
-        if header === "authorization", do: value
-      end)
-
-    {:ok, %{"uid" => uid}} = Token.verify_and_validate(jwt)
-
-    player = Repo.get(Player, uid)
+    player = get_player_from_jwt(conn)
 
     {status, body} =
       case conn.body_params do
@@ -151,17 +119,13 @@ defmodule Chessh.Web.Endpoint do
   end
 
   post "/player/keys" do
-    jwt =
-      Enum.find_value(conn.req_headers, fn {header, value} ->
-        if header === "authorization", do: value
-      end)
-
-    {:ok, %{"uid" => uid}} = Token.verify_and_validate(jwt)
+    player = get_player_from_jwt(conn)
 
     {status, body} =
       case conn.body_params do
         %{"key" => key, "name" => name} ->
-          case Key.changeset(%Key{}, %{player_id: uid, key: key, name: name}) |> Repo.insert() do
+          case Key.changeset(%Key{}, %{player_id: player.id, key: key, name: name})
+               |> Repo.insert() do
             {:ok, _new_key} ->
               {
                 200,
@@ -191,6 +155,14 @@ defmodule Chessh.Web.Endpoint do
     |> send_resp(status, Jason.encode!(body))
   end
 
+  get "/player/me" do
+    player = get_player_from_jwt(conn)
+
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(200, Jason.encode!(player))
+  end
+
   get "/player/:id/keys" do
     %{"id" => player_id} = conn.path_params
 
@@ -198,22 +170,17 @@ defmodule Chessh.Web.Endpoint do
 
     conn
     |> put_resp_content_type("application/json")
-    |> send_resp(200, Jason.encode!(%{keys: keys}))
+    |> send_resp(200, Jason.encode!(keys))
   end
 
   delete "/keys/:id" do
-    jwt =
-      Enum.find_value(conn.req_headers, fn {header, value} ->
-        if header === "authorization", do: value
-      end)
-
-    {:ok, %{"uid" => uid}} = Token.verify_and_validate(jwt)
+    player = get_player_from_jwt(conn)
 
     %{"id" => key_id} = conn.path_params
     key = Repo.get(Key, key_id)
 
     {status, body} =
-      if key && uid == key.player_id do
+      if key && player.id == key.player_id do
         case Repo.delete(key) do
           {:ok, _} ->
             {200, %{success: true}}
@@ -257,5 +224,59 @@ defmodule Chessh.Web.Endpoint do
       ],
       fn key -> Application.get_env(:chessh, Web)[key] end
     )
+  end
+
+  defp get_player_from_jwt(conn) do
+    auth_header =
+      Enum.find_value(conn.req_headers, fn {header, value} ->
+        if header === "authorization", do: value
+      end)
+
+    jwt = if auth_header, do: auth_header, else: Map.get(fetch_cookies(conn).cookies, "jwt")
+
+    {:ok, %{"uid" => uid}} = Token.verify_and_validate(jwt)
+
+    Repo.get(Player, uid)
+  end
+
+  defp create_player_from_github_response(resp, github_user_api_url, github_user_agent) do
+    case resp do
+      %{"access_token" => access_token} ->
+        case :httpc.request(
+               :get,
+               {String.to_charlist(github_user_api_url),
+                [
+                  {'Authorization', String.to_charlist("Bearer #{access_token}")},
+                  {'User-Agent', github_user_agent}
+                ]},
+               [],
+               []
+             ) do
+          {:ok, {{_, 200, 'OK'}, _, user_details}} ->
+            %{"login" => username, "id" => github_id} =
+              Jason.decode!(String.Chars.to_string(user_details))
+
+            %Player{id: id} =
+              Repo.insert!(%Player{github_id: github_id, username: username},
+                on_conflict: [set: [github_id: github_id]],
+                conflict_target: :github_id
+              )
+
+            {200,
+             %{
+               success: true,
+               jwt:
+                 Token.generate_and_sign!(%{
+                   "uid" => id
+                 })
+             }}
+
+          _ ->
+            {400, %{errors: "Access token was incorrect. Try again."}}
+        end
+
+      _ ->
+        {400, %{errors: "Failed to retrieve token from GitHub. Try again."}}
+    end
   end
 end

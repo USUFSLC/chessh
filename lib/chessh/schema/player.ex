@@ -21,6 +21,15 @@ defmodule Chessh.Player do
     timestamps()
   end
 
+  defimpl Jason.Encoder, for: Chessh.Player do
+    def encode(value, opts) do
+      Jason.Encode.map(
+        Map.take(value, [:id, :github_id, :username, :created_at, :updated_at]),
+        opts
+      )
+    end
+  end
+
   def authentications_changeset(player, attrs) do
     player
     |> cast(attrs, [:authentications])
