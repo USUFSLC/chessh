@@ -56,10 +56,7 @@ export const Home = () => {
 
   return (
     <div>
-      <h1>CheSSH</h1>
-      <p>Hello!</p>
       <p>Looks like you're not signed in 👀. </p>
-      <p>Please link your GitHub account above!</p>
     </div>
   );
 };
