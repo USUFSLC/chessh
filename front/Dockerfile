@@ -20,7 +20,7 @@ RUN npm run build
 FROM nginx:alpine
 
 EXPOSE 80
-COPY nginx.conf /etc/nginx/conf.d/
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /usr/app/build /usr/share/nginx/html
 
 RUN chown -R nginx:nginx /usr/share/nginx/html

@@ -4,7 +4,8 @@ datestamp=$(date +%Y%m%d-%H%M)
 env_file=.env.prod
 project_name=chessh
 port=8080
-host=127.0.0.1
+ssh_port=34355
+host=0.0.0.0
 
 container_names=("chessh-database" "chessh-server" "chessh-frontend")
 
@@ -39,6 +40,7 @@ docker run \
 	--env-file $env_file \
 	--network $project_name \
 	--name $project_name-server \
+  --publish "${host}:${ssh_port}:${ssh_port}/tcp" \
 	--net-alias server \
   chessh/server
 

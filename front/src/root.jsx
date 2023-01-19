@@ -5,8 +5,7 @@ import logo from "./assets/chessh_sm.svg";
 import { useAuthContext } from "./context/auth_context";
 
 export const Root = () => {
-  const { signedIn, setUserId, setSignedIn, setSessionOver, signOut } =
-    useAuthContext();
+  const { signedIn, signOut } = useAuthContext();
 
   return (
     <>

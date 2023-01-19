@@ -71,4 +71,7 @@ COPY --from=builder --chown=nobody:root /app/priv /app/priv
 
 USER nobody
 
+EXPOSE 8080
+EXPOSE 34355
+
 CMD /app/bin/chessh eval "Chessh.Release.migrate" && /app/bin/chessh start
