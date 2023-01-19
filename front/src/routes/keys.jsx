@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
+import Modal from "react-modal";
+import { useEffect, useState, useCallback } from "react";
 import { useAuthContext } from "../context/auth_context";
+
+Modal.setAppElement("#root");
 
 const MINIMIZE_KEY_LEN = 40;
 const minimizeKey = (key) => {
@@ -11,7 +14,7 @@ const minimizeKey = (key) => {
   return key;
 };
 
-const KeyCard = ({ props }) => {
+const KeyCard = ({ onDelete, props }) => {
   const { id, name, key } = props;
 
   const deleteThisKey = () => {
@@ -20,25 +23,41 @@ const KeyCard = ({ props }) => {
       method: "DELETE",
     })
       .then((r) => r.json())
-      .then((d) => d.success); //&& onDelete());
+      .then((d) => d.success && onDelete && onDelete());
   };
 
   return (
     <div className="key-card">
-      <h4>{name}</h4>
-      <p>{minimizeKey(key)}</p>
+      <h4 style={{ flex: 1 }}>{name}</h4>
+      <p style={{ flex: 4 }}>{minimizeKey(key)}</p>
 
-      <button className="button red" onClick={deleteThisKey}>
+      <button
+        style={{ flex: 0 }}
+        className="button red"
+        onClick={deleteThisKey}
+      >
         Delete
       </button>
     </div>
   );
 };
 
-const AddKey = () => {
-  const [key, setKey] = useState("");
-  const [name, setName] = useState("");
-  const [error, setError] = useState("");
+const AddKeyButton = ({ onSave }) => {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState({ value: "", error: "" });
+  const [key, setKey] = useState({ value: "", error: "" });
+  const [errors, setErrors] = useState(null);
+
+  const setDefaults = () => {
+    setName({ value: "", error: "" });
+    setKey({ value: "", error: "" });
+    setErrors(null);
+  };
+
+  const close = () => {
+    setDefaults();
+    setOpen(false);
+  };
 
   const createKey = () => {
     fetch(`/api/player/keys`, {
@@ -48,28 +67,92 @@ const AddKey = () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        key,
-        name,
+        key: key.value,
+        name: name.value,
       }),
     })
       .then((r) => r.json())
       .then((d) => {
         if (d.success) {
-          setName("");
-          setKey("");
-        } else {
-          setError(d.errors);
+          if (onSave) {
+            onSave();
+          }
+          setDefaults();
+          close();
+        } else if (d.errors) {
+          if (typeof d.errors === "object") {
+            setErrors(
+              Object.keys(d.errors).map(
+                (field) => `${field}: ${d.errors[field].join(",")}`
+              )
+            );
+          } else {
+            setErrors([d.errors]);
+          }
         }
       });
   };
 
   return (
-    <div className="key-card">
-      <input onChange={(e) => setName(e.target.value)} />
-      <textarea onChange={(e) => setKey(e.target.value)} />
-      <button className="button gold" onClick={createKey}>
-        Add
+    <div>
+      <button className="button" onClick={() => setOpen(true)}>
+        + Add Key
       </button>
+      <Modal
+        isOpen={open}
+        onRequestClose={close}
+        className="modal"
+        contentLabel="Add Key"
+      >
+        <div>
+          <h3>Add SSH Key</h3>
+          <p>
+            Not sure about this? Check{" "}
+            <a
+              href="https://www.ssh.com/academy/ssh/keygen"
+              target="_blank"
+              rel="noreferrer"
+            >
+              here
+            </a>{" "}
+            for help!
+          </p>
+          <hr />
+          <p>Key Name *</p>
+          <input
+            value={name.value}
+            onChange={(e) => setName({ ...name, value: e.target.value })}
+            required
+          />
+        </div>
+        <div>
+          <p>SSH Key *</p>
+          <textarea
+            cols={40}
+            rows={5}
+            value={key.value}
+            onChange={(e) => setKey({ ...key, value: e.target.value })}
+            required
+          />
+        </div>
+        <div>
+          {errors && (
+            <div style={{ color: "red" }}>
+              {errors.map((error, i) => (
+                <p key={i}>{error}</p>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="flex-end-row">
+          <button className="button" onClick={createKey}>
+            Add
+          </button>
+          <button className="button red" onClick={close}>
+            Cancel
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 };
@@ -78,13 +161,19 @@ export const Keys = () => {
   const { userId } = useAuthContext();
   const [keys, setKeys] = useState(null);
 
-  useEffect(() => {
-    if (userId) {
+  const refreshKeys = useCallback(
+    () =>
       fetch(`/api/player/${userId}/keys`)
         .then((r) => r.json())
-        .then((keys) => setKeys(keys));
+        .then((keys) => setKeys(keys)),
+    [userId]
+  );
+
+  useEffect(() => {
+    if (userId) {
+      refreshKeys();
     }
-  }, [userId]);
+  }, [userId, refreshKeys]);
 
   if (!keys) {
     return <p>Loading...</p>;
@@ -92,12 +181,17 @@ export const Keys = () => {
   if (Array.isArray(keys)) {
     return (
       <>
-        <AddKey />
-        {keys.length ? (
-          keys.map((key) => <KeyCard key={key.id} props={key} />)
-        ) : (
-          <p>No keys</p>
-        )}
+        <h2>My Keys</h2>
+        <AddKeyButton onSave={refreshKeys} />
+        <div className="key-card-collection">
+          {keys.length ? (
+            keys.map((key) => (
+              <KeyCard key={key.id} onDelete={refreshKeys} props={key} />
+            ))
+          ) : (
+            <p>Looks like you've got no keys, try adding some!</p>
+          )}
+        </div>
       </>
     );
   }

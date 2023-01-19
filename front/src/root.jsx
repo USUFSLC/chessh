@@ -2,7 +2,7 @@ import { Link, Outlet } from "react-router-dom";
 
 import logo from "./assets/chessh_sm.svg";
 
-import { useAuthContext, DEFAULT_EXPIRY_TIME_MS } from "./context/auth_context";
+import { useAuthContext } from "./context/auth_context";
 
 export const Root = () => {
   const { signedIn, setUserId, setSignedIn, setSessionOver } = useAuthContext();
@@ -45,15 +45,7 @@ export const Root = () => {
               </>
             ) : (
               <>
-                <a
-                  onClick={() =>
-                    setSessionOver(
-                      new Date(Date.now() + DEFAULT_EXPIRY_TIME_MS)
-                    )
-                  }
-                  href={process.env.REACT_APP_GITHUB_OAUTH}
-                  className="button"
-                >
+                <a href={process.env.REACT_APP_GITHUB_OAUTH} className="button">
                   🐙 Login w/ GitHub 🐙
                 </a>
               </>

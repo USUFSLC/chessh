@@ -35,8 +35,8 @@ export const Demo = () => {
       </h1>
       <div className="flex-row-around">
         <p>
-          CheSSH is a multiplayer, scalable, free, open source, and potentially
-          passwordless game of Chess over the SSH protocol.
+          CheSSH is a multiplayer, scalable, free, open source, and (optionally)
+          passwordless game of Chess over the SSH protocol, written in Elixir.
         </p>
         <a
           className="button gold"
@@ -44,7 +44,7 @@ export const Demo = () => {
           target="_blank"
           rel="noreferrer"
         >
-          🌟 Star 🌟
+          🌟 Star Repo 🌟
         </a>
       </div>
       <hr />
@@ -53,7 +53,7 @@ export const Demo = () => {
       <div className="flex-row-around">
         <h3>Would you like to play a game?</h3>
         <Link className="button" to="/home">
-          Yes, Joshua ⇒
+          Yes, Falken ⇒
         </Link>
       </div>
     </div>

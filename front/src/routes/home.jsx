@@ -9,8 +9,8 @@ export const Home = () => {
   if (signedIn) {
     const sshConfig = `Host chessh
   Hostname ${process.env.REACT_APP_SSH_SERVER}
-  User ${username}
   Port ${process.env.REACT_APP_SSH_PORT}
+  User ${username}
   PubkeyAuthentication yes`;
     return (
       <>
@@ -37,10 +37,10 @@ export const Home = () => {
           />
 
           <div>
-            <li>And connect with:</li>
+            <li>Then, connect with:</li>
             <CopyBlock
               theme={dracula}
-              text={`ssh -t chessh`}
+              text={"ssh -t chessh"}
               language={"shell"}
               showLineNumbers={false}
               codeBlock
@@ -54,6 +54,9 @@ export const Home = () => {
   return (
     <div>
       <h1>CheSSH</h1>
+      <p>Hello!</p>
+      <p>Looks like you're not signed in 👀. </p>
+      <p>Please link your GitHub account above!</p>
     </div>
   );
 };

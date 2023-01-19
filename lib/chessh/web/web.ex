@@ -3,6 +3,7 @@ defmodule Chessh.Web.Endpoint do
   alias Chessh.Web.Token
   use Plug.Router
   require Logger
+  import Ecto.Query
 
   plug(Plug.Logger)
   plug(:match)
@@ -127,26 +128,35 @@ defmodule Chessh.Web.Endpoint do
   post "/player/keys" do
     player = get_player_from_jwt(conn)
 
+    player_key_count =
+      Repo.aggregate(from(k in Key, where: k.player_id == ^player.id), :count, :id)
+
+    max_key_count = Application.get_env(:chessh, RateLimits)[:player_public_keys]
+
     {status, body} =
       case conn.body_params do
         %{"key" => key, "name" => name} ->
-          case Key.changeset(%Key{player_id: player.id}, %{key: key, name: name})
-               |> Repo.insert() do
-            {:ok, _new_key} ->
-              {
-                200,
-                %{
-                  success: true
+          if player_key_count > max_key_count do
+            {400, %{errors: "Player has reached threshold of #{max_key_count} keys."}}
+          else
+            case Key.changeset(%Key{player_id: player.id}, %{key: key, name: name})
+                 |> Repo.insert() do
+              {:ok, _new_key} ->
+                {
+                  200,
+                  %{
+                    success: true
+                  }
                 }
-              }
 
-            {:error, %{valid?: false} = changeset} ->
-              {
-                400,
-                %{
-                  errors: format_errors(changeset)
+              {:error, %{valid?: false} = changeset} ->
+                {
+                  400,
+                  %{
+                    errors: format_errors(changeset)
+                  }
                 }
-              }
+            end
           end
 
         _ ->

@@ -22,7 +22,7 @@ defmodule Chessh.Key do
     |> cast(update_encode_key(attrs, :key), [:key, :player_id])
     |> cast(attrs, [:name])
     |> validate_required([:key, :name])
-    |> validate_format(:key, ~r/[\-\w\d]+ [^ ]+$/, message: "invalid public ssh key")
+    |> validate_format(:key, ~r/^[\-\w\d]+ [^ ]+$/, message: "invalid public ssh key")
     |> validate_format(:key, ~r/^(?!ssh-dss).+/, message: "DSA keys are not supported")
     |> unique_constraint([:player_id, :key], message: "Player already has that key")
   end
