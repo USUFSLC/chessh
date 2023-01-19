@@ -17,7 +17,7 @@ defmodule Chessh.MixProject do
   def application do
     [
       mod: {Chessh.Application, []},
-      extra_applications: [:logger, :crypto, :syn, :ssh]
+      extra_applications: [:logger, :crypto, :syn, :ssh, :plug_cowboy, :inets, :ssl]
     ]
   end
 
@@ -34,7 +34,9 @@ defmodule Chessh.MixProject do
       {:bcrypt_elixir, "~> 3.0"},
       {:hammer, "~> 6.1"},
       {:syn, "~> 3.3"},
-      {:jason, "~> 1.3"}
+      {:jason, "~> 1.3"},
+      {:plug_cowboy, "~> 2.2"},
+      {:joken, "~> 2.5"}
     ]
   end
 

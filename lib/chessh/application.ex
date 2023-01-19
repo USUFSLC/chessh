@@ -15,7 +15,16 @@ defmodule Chessh.Application do
   end
 
   def start(_, _) do
-    children = [Chessh.Repo, Chessh.SSH.Daemon]
+    children = [
+      Chessh.Repo,
+      Chessh.SSH.Daemon,
+      Plug.Cowboy.child_spec(
+        scheme: :http,
+        plug: Chessh.Web.Endpoint,
+        options: [port: Application.get_env(:chessh, Web)[:port]]
+      )
+    ]
+
     opts = [strategy: :one_for_one, name: Chessh.Supervisor]
 
     with {:ok, pid} <- Supervisor.start_link(children, opts) do

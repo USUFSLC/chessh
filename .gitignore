@@ -26,3 +26,4 @@ server-*.tar
 /tmp/
 
 .env
+.env.prod

@@ -47,12 +47,12 @@ defmodule Chessh.SSH.Daemon do
             :disconnect
         end
 
-      x ->
+      authed_or_disconnect ->
         PlayerSession.update_sessions_and_player_satisfies(username, fn _player ->
-          x
+          authed_or_disconnect
         end)
 
-        x
+        authed_or_disconnect
     end
   end
 
@@ -92,7 +92,7 @@ defmodule Chessh.SSH.Daemon do
   def handle_info(_, state), do: {:noreply, state}
 
   defp on_disconnect(_reason) do
-    Logger.debug("#{inspect(self())} disconnected")
+    Logger.info("#{inspect(self())} disconnected")
 
     Repo.delete_all(
       from(p in PlayerSession,

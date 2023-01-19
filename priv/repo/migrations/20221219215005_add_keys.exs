@@ -6,7 +6,7 @@ defmodule Chessh.Repo.Migrations.AddKeys do
       add(:key, :text, null: false)
       add(:name, :string, null: false)
 
-      add(:player_id, references(:players))
+      add(:player_id, references(:players), null: false)
 
       timestamps()
     end
