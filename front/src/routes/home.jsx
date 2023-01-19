@@ -55,8 +55,8 @@ export const Home = () => {
   }
 
   return (
-    <div>
+    <>
       <p>Looks like you're not signed in 👀. </p>
-    </div>
+    </>
   );
 };

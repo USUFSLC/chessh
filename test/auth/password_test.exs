@@ -2,7 +2,7 @@ defmodule Chessh.Auth.PasswordAuthenticatorTest do
   use ExUnit.Case
   alias Chessh.{Player, Repo}
 
-  @valid_user %{username: "logan", password: "password"}
+  @valid_user %{username: "logan", password: "password", github_id: 1}
 
   setup_all do
     Ecto.Adapters.SQL.Sandbox.checkout(Repo)
