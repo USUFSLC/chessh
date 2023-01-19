@@ -11,8 +11,6 @@ defmodule Chessh.SSH.Client do
 
   @min_terminal_width 64
   @min_terminal_height 38
-  @max_terminal_width 220
-  @max_terminal_height 100
 
   defmodule State do
     defstruct tui_pid: nil,
@@ -163,13 +161,10 @@ defmodule Chessh.SSH.Client do
   end
 
   defp get_terminal_dim_msg(width, height) do
-    case {height > @max_terminal_height, height < @min_terminal_height,
-          width > @max_terminal_width, width < @min_terminal_width} do
-      {true, _, _, _} -> {true, @clear_codes ++ ["The terminal height is too large."]}
-      {_, true, _, _} -> {true, @clear_codes ++ ["The terminal height is too small."]}
-      {_, _, true, _} -> {true, @clear_codes ++ ["The terminal width is too large"]}
-      {_, _, _, true} -> {true, @clear_codes ++ ["The terminal width is too small."]}
-      {false, false, false, false} -> {false, nil}
+    case {height < @min_terminal_height, width < @min_terminal_width} do
+      {true, _} -> {true, @clear_codes ++ ["The terminal height is too small."]}
+      {_, true} -> {true, @clear_codes ++ ["The terminal width is too small."]}
+      {false, false} -> {false, nil}
     end
   end
 
