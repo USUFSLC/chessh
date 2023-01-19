@@ -4,20 +4,17 @@ import { Link } from "react-router-dom";
 import { useAuthContext } from "../context/auth_context";
 
 export const Home = () => {
-  const {
-    player: { username },
-    signedIn,
-  } = useAuthContext();
+  const { player, signedIn } = useAuthContext();
 
   if (signedIn) {
     const sshConfig = `Host chessh
   Hostname ${process.env.REACT_APP_SSH_SERVER}
   Port ${process.env.REACT_APP_SSH_PORT}
-  User ${username}
+  User ${player?.username}
   PubkeyAuthentication yes`;
     return (
       <>
-        <h2>Hello there, {username}!</h2>
+        <h2>Hello there, {player?.username}!</h2>
         <p>
           You can now start playing CheSSH by using any of your imported{" "}
           <Link to="/keys">public keys</Link>, or by{" "}

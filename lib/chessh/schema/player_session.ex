@@ -108,4 +108,12 @@ defmodule Chessh.PlayerSession do
       3_000 -> false
     end
   end
+
+  def close_all_player_sessions(player) do
+    player_sessions = Repo.all(from(p in PlayerSession, where: p.player_id == ^player.id))
+
+    Enum.map(player_sessions, fn session ->
+      :syn.publish(:player_sessions, {:session, session.id}, :session_closed)
+    end)
+  end
 end

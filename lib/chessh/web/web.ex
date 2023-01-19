@@ -1,5 +1,5 @@
 defmodule Chessh.Web.Endpoint do
-  alias Chessh.{Player, Repo, Key}
+  alias Chessh.{Player, Repo, Key, PlayerSession}
   alias Chessh.Web.Token
   use Plug.Router
   require Logger
@@ -45,6 +45,7 @@ defmodule Chessh.Web.Endpoint do
 
   put "/player/password" do
     player = get_player_from_jwt(conn)
+    PlayerSession.close_all_player_sessions(player)
 
     {status, body} =
       case conn.body_params do
@@ -180,6 +181,7 @@ defmodule Chessh.Web.Endpoint do
 
   delete "/keys/:id" do
     player = get_player_from_jwt(conn)
+    PlayerSession.close_all_player_sessions(player)
 
     %{"id" => key_id} = conn.path_params
     key = Repo.get(Key, key_id)
