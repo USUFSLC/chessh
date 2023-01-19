@@ -35,16 +35,23 @@ defmodule Chessh.SSH.Client.Game do
   def init([
         %State{
           color: color,
-          game: %Game{dark_player_id: dark_player_id, light_player_id: light_player_id}
+          game: %Game{dark_player_id: dark_player_id, light_player_id: light_player_id},
+          player_session: %{player_id: player_id}
         } = state
         | tail
       ])
       when is_nil(color) do
+    {is_dark, is_light} = {player_id == dark_player_id, player_id == light_player_id}
+
     new_state =
-      case {is_nil(dark_player_id), is_nil(light_player_id)} do
-        {true, false} -> %State{state | color: :dark}
-        {false, true} -> %State{state | color: :light}
-        {_, _} -> %State{state | color: Enum.random([:light, :dark])}
+      if is_dark || is_light do
+        %State{state | color: if(is_light, do: :light, else: :dark)}
+      else
+        case {is_nil(dark_player_id), is_nil(light_player_id)} do
+          {true, false} -> %State{state | color: :dark}
+          {false, true} -> %State{state | color: :light}
+          {_, _} -> %State{state | color: :light}
+        end
       end
 
     init([new_state | tail])
@@ -89,18 +96,22 @@ defmodule Chessh.SSH.Client.Game do
     end
 
     binbo_pid = initialize_game(game_id, fen)
-    send(client_pid, {:send_to_ssh, Utils.clear_codes()})
 
     new_game = Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player])
 
-    new_state = %State{
-      state
-      | binbo_pid: binbo_pid,
-        color: if(new_game.light_player_id == player_session.player_id, do: :light, else: :dark),
-        game: new_game
-    }
+    player_color =
+      if(new_game.light_player_id == player_session.player_id, do: :light, else: :dark)
 
-    {:ok, new_state}
+    send(client_pid, {:send_to_ssh, Utils.clear_codes()})
+
+    {:ok,
+     %State{
+       state
+       | binbo_pid: binbo_pid,
+         color: player_color,
+         game: new_game,
+         flipped: player_color == :dark
+     }}
   end
 
   def init([

@@ -4,7 +4,10 @@ import { Link } from "react-router-dom";
 import { useAuthContext } from "../context/auth_context";
 
 export const Home = () => {
-  const { username, signedIn } = useAuthContext();
+  const {
+    player: { username },
+    signedIn,
+  } = useAuthContext();
 
   if (signedIn) {
     const sshConfig = `Host chessh

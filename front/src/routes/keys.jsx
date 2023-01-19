@@ -67,7 +67,7 @@ const AddKeyButton = ({ onSave }) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        key: key.value,
+        key: key.value.trim(),
         name: name.value,
       }),
     })
@@ -77,7 +77,6 @@ const AddKeyButton = ({ onSave }) => {
           if (onSave) {
             onSave();
           }
-          setDefaults();
           close();
         } else if (d.errors) {
           if (typeof d.errors === "object") {
@@ -158,7 +157,9 @@ const AddKeyButton = ({ onSave }) => {
 };
 
 export const Keys = () => {
-  const { userId } = useAuthContext();
+  const {
+    player: { id: userId },
+  } = useAuthContext();
   const [keys, setKeys] = useState(null);
 
   const refreshKeys = useCallback(
@@ -175,9 +176,8 @@ export const Keys = () => {
     }
   }, [userId, refreshKeys]);
 
-  if (!keys) {
-    return <p>Loading...</p>;
-  }
+  if (!keys) return <p>Loading...</p>;
+
   if (Array.isArray(keys)) {
     return (
       <>

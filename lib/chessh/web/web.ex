@@ -39,21 +39,8 @@ defmodule Chessh.Web.Endpoint do
     {status, body} =
       create_player_from_github_response(resp, github_user_api_url, github_user_agent)
 
-    case body do
-      %{jwt: token} ->
-        client_redirect_location =
-          Application.get_env(:chessh, Web)[:client_redirect_after_successful_sign_in]
-
-        conn
-        |> put_resp_cookie("jwt", token)
-        |> put_resp_header("location", client_redirect_location)
-        |> send_resp(301, '')
-
-      _ ->
-        conn
-        |> put_resp_content_type("application/json")
-        |> send_resp(status, Jason.encode!(body))
-    end
+    conn
+    |> assign_jwt_and_redirect_or_encode(status, body)
   end
 
   put "/player/password" do
@@ -115,8 +102,7 @@ defmodule Chessh.Web.Endpoint do
       end
 
     conn
-    |> put_resp_content_type("application/json")
-    |> send_resp(status, Jason.encode!(body))
+    |> assign_jwt_and_redirect_or_encode(status, body)
   end
 
   get "/player/logout" do
@@ -171,12 +157,15 @@ defmodule Chessh.Web.Endpoint do
     |> send_resp(status, Jason.encode!(body))
   end
 
-  get "/player/me" do
-    player = get_player_from_jwt(conn)
+  get "/player/token/me" do
+    {:ok, jwt} = Token.verify_and_validate(get_jwt(conn))
+
+    %{"uid" => player_id, "exp" => expiration} = jwt
+    player = Repo.get(Player, player_id)
 
     conn
     |> put_resp_content_type("application/json")
-    |> send_resp(200, Jason.encode!(player))
+    |> send_resp(200, Jason.encode!(%{player: player, expiration: expiration * 1000}))
   end
 
   get "/player/:id/keys" do
@@ -242,17 +231,37 @@ defmodule Chessh.Web.Endpoint do
     )
   end
 
-  defp get_player_from_jwt(conn) do
+  defp get_jwt(conn) do
     auth_header =
       Enum.find_value(conn.req_headers, fn {header, value} ->
         if header === "authorization", do: value
       end)
 
-    jwt = if auth_header, do: auth_header, else: Map.get(fetch_cookies(conn).cookies, "jwt")
+    if auth_header, do: auth_header, else: Map.get(fetch_cookies(conn).cookies, "jwt")
+  end
 
-    {:ok, %{"uid" => uid}} = Token.verify_and_validate(jwt)
+  defp get_player_from_jwt(conn) do
+    {:ok, %{"uid" => uid}} = Token.verify_and_validate(get_jwt(conn))
 
     Repo.get(Player, uid)
+  end
+
+  defp assign_jwt_and_redirect_or_encode(conn, status, body) do
+    case body do
+      %{jwt: token} ->
+        client_redirect_location =
+          Application.get_env(:chessh, Web)[:client_redirect_after_successful_sign_in]
+
+        conn
+        |> put_resp_cookie("jwt", token)
+        |> put_resp_header("location", client_redirect_location)
+        |> send_resp(301, '')
+
+      _ ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(status, Jason.encode!(body))
+    end
   end
 
   defp create_player_from_github_response(resp, github_user_api_url, github_user_agent) do

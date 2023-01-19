@@ -1,33 +1,23 @@
-import { useEffect, useCallback } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 
-import {
-  useAuthContext,
-  DEFAULT_EXPIRY_TIME_MS,
-} from "../context/auth_context";
+import { useAuthContext } from "../context/auth_context";
 
 export const AuthSuccessful = () => {
-  const {
-    username,
-    userId,
-    sessionOver,
-    signedIn,
-    setSignedIn,
-    setUserId,
-    setUsername,
-    setSessionOver,
-  } = useAuthContext();
+  const { player, setPlayer, signedIn, setSignedIn, setSessionOver } =
+    useAuthContext();
 
   useEffect(() => {
-    fetch("/api/player/me", {
+    fetch("/api/player/token/me", {
       credentials: "same-origin",
     })
       .then((r) => r.json())
-      .then((player) => {
+      .then(({ player, expiration }) => {
         setSignedIn(!!player);
-        setUserId(player.id);
-        setUsername(player.username);
+        setPlayer(player);
+        setSessionOver(expiration);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (signedIn) {
@@ -35,7 +25,7 @@ export const AuthSuccessful = () => {
       <>
         <h1>Authentication Successful</h1>
         <div>
-          <span>Hello there, {username || ""}! </span>
+          <span>Hello there, {player?.username || ""}! </span>
           <Link to="/home" className="button">
             Go Home{" "}
           </Link>

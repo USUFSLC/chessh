@@ -5,18 +5,8 @@ import logo from "./assets/chessh_sm.svg";
 import { useAuthContext } from "./context/auth_context";
 
 export const Root = () => {
-  const { signedIn, setUserId, setSignedIn, setSessionOver } = useAuthContext();
-
-  const signOut = () => {
-    fetch("/api/player/logout", {
-      method: "GET",
-      credentials: "same-origin",
-    }).then(() => {
-      setSignedIn(false);
-      setUserId(null);
-      setSessionOver(new Date());
-    });
-  };
+  const { signedIn, setUserId, setSignedIn, setSessionOver, signOut } =
+    useAuthContext();
 
   return (
     <>
