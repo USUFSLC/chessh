@@ -63,7 +63,6 @@ defmodule Chessh.SSH.Client.Menu do
           %Chessh.SSH.Client.Game.State{player_session: player_session, game: game}}}
       end) ++
       [
-        {"Settings", {}},
         {"Help", {}}
       ]
   end
@@ -130,7 +129,14 @@ defmodule Chessh.SSH.Client.Menu do
         fn {i, {option, _}} ->
           [
             ANSI.cursor(y + length(logo_lines) + i + 1, x),
-            if(i == selected, do: ANSI.format([:bright, :light_cyan, "+ #{option}"]), else: option)
+            if(i == selected,
+              do:
+                ANSI.format_fragment(
+                  [:light_cyan, :bright, "> #{option} <", :reset],
+                  true
+                ),
+              else: option
+            )
           ]
         end
       ) ++ [ANSI.home()]
