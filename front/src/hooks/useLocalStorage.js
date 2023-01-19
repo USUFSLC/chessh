@@ -13,8 +13,10 @@ const useStorage = (storage, keyPrefix) => (storageKey, fallbackState) => {
 
   if (storedString !== null) parsedObject = JSON.parse(storedString);
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const [value, setValue] = useState(parsedObject ?? fallbackState);
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     storage.setItem(keyPrefix + storageKey, JSON.stringify(value));
   }, [value, storageKey]);
@@ -22,6 +24,7 @@ const useStorage = (storage, keyPrefix) => (storageKey, fallbackState) => {
   return [value, setValue];
 };
 
+// eslint-disable-next-line react-hooks/rules-of-hooks
 export const useLocalStorage = useStorage(
   window.localStorage,
   STORAGE_KEYS_PREFIX

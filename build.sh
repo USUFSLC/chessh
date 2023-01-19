@@ -1,11 +1,16 @@
-#!/usr/bin/env bash
-# Initial setup
-mix deps.get --only prod
-MIX_ENV=prod mix compile
+#!/bin/bash
 
-# Remove the existing release directory and build the release
-rm -rf "_build"
-MIX_ENV=prod mix release
+env_file=.env.prod
+started_in=$PWD
 
-# for auto DB migration upon deploy
-MIX_ENV=prod mix ecto.migrate
+export $(cat $env_file | xargs) 
+
+cd front
+docker build \
+ --build-arg REACT_APP_GITHUB_OAUTH=${REACT_APP_GITHUB_OAUTH} \
+ --build-arg REACT_APP_SSH_SERVER=${REACT_APP_SSH_SERVER} \
+ --build-arg REACT_APP_SSH_PORT=${REACT_APP_SSH_PORT} \
+ . -t chessh/frontend 
+
+cd $started_in
+docker build . -t chessh/server

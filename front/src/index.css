@@ -174,7 +174,8 @@ textarea {
   border-radius: 4px;
   border: 1px solid var(--primary-text-color);
 }
-input,textarea: focus {
+input:focus,
+textarea:focus {
   border: 1px solid var(--gold-color);
 }
 
