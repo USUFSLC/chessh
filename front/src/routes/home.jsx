@@ -14,27 +14,30 @@ export const Home = () => {
   PubkeyAuthentication yes`;
     return (
       <>
-        <h2>Hello there, {player?.username}!</h2>
-        <p>
-          You can now start playing CheSSH by using any of your imported{" "}
-          <Link to="/keys">public keys</Link>, or by{" "}
-          <Link to="/user">creating a password</Link>.
-        </p>
-
+        <h2>Welcome, {player?.username}</h2>
         <hr />
-        <h2>Getting Started</h2>
+        <h3>Getting Started</h3>
         <ol>
-          <li>
-            Add the following to your ssh config (normally in ~/.ssh/config):
-          </li>
+          <div>
+            <li>
+              Add a <Link to="/keys">public key</Link>, or{" "}
+              <Link to="/password">set a password</Link>.
+            </li>
+          </div>
+          <div>
+            <li>
+              Insert the following block in your{" "}
+              <a href="https://linux.die.net/man/5/ssh_config">ssh config</a>:
+            </li>
 
-          <CopyBlock
-            theme={dracula}
-            text={sshConfig}
-            showLineNumbers={true}
-            wrapLines
-            codeBlock
-          />
+            <CopyBlock
+              theme={dracula}
+              text={sshConfig}
+              showLineNumbers={true}
+              wrapLines
+              codeBlock
+            />
+          </div>
 
           <div>
             <li>Then, connect with:</li>

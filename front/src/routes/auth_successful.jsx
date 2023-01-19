@@ -23,11 +23,17 @@ export const AuthSuccessful = () => {
   if (signedIn) {
     return (
       <>
-        <h1>Authentication Successful</h1>
+        <h3>Hello there, {player?.username || ""}! </h3>
         <div>
-          <span>Hello there, {player?.username || ""}! </span>
+          <span> If you have not already done so: </span>
+          <Link to="/keys" className="button">
+            Add a Public Key
+          </Link>
+        </div>
+        <br />
+        <div>
           <Link to="/home" className="button">
-            Go Home{" "}
+            Go Home
           </Link>
         </div>
       </>

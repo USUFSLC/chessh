@@ -18,12 +18,18 @@ const KeyCard = ({ onDelete, props }) => {
   const { id, name, key } = props;
 
   const deleteThisKey = () => {
-    fetch(`/api/keys/${id}`, {
-      credentials: "same-origin",
-      method: "DELETE",
-    })
-      .then((r) => r.json())
-      .then((d) => d.success && onDelete && onDelete());
+    if (
+      window.confirm(
+        "Are you sure? This will close all your current ssh sessions."
+      )
+    ) {
+      fetch(`/api/keys/${id}`, {
+        credentials: "same-origin",
+        method: "DELETE",
+      })
+        .then((r) => r.json())
+        .then((d) => d.success && onDelete && onDelete());
+    }
   };
 
   return (
@@ -44,13 +50,13 @@ const KeyCard = ({ onDelete, props }) => {
 
 const AddKeyButton = ({ onSave }) => {
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState({ value: "", error: "" });
-  const [key, setKey] = useState({ value: "", error: "" });
+  const [name, setName] = useState("");
+  const [key, setKey] = useState("");
   const [errors, setErrors] = useState(null);
 
   const setDefaults = () => {
-    setName({ value: "", error: "" });
-    setKey({ value: "", error: "" });
+    setName("");
+    setKey("");
     setErrors(null);
   };
 
@@ -67,8 +73,8 @@ const AddKeyButton = ({ onSave }) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        key: key.value.trim(),
-        name: name.value,
+        key: key.trim(),
+        name: name.trim(),
       }),
     })
       .then((r) => r.json())
@@ -119,8 +125,8 @@ const AddKeyButton = ({ onSave }) => {
           <hr />
           <p>Key Name *</p>
           <input
-            value={name.value}
-            onChange={(e) => setName({ ...name, value: e.target.value })}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             required
           />
         </div>
@@ -129,8 +135,8 @@ const AddKeyButton = ({ onSave }) => {
           <textarea
             cols={40}
             rows={5}
-            value={key.value}
-            onChange={(e) => setKey({ ...key, value: e.target.value })}
+            value={key}
+            onChange={(e) => setKey(e.target.value)}
             required
           />
         </div>

@@ -7,6 +7,7 @@ import { Root } from "./root";
 import { Demo } from "./routes/demo";
 import { Home } from "./routes/home";
 import { Keys } from "./routes/keys";
+import { Password } from "./routes/password";
 import { AuthSuccessful } from "./routes/auth_successful";
 
 import "./index.css";
@@ -23,16 +24,12 @@ const router = createBrowserRouter([
         element: <Home />,
       },
       {
-        path: "user",
-        element: <Home />,
+        path: "password",
+        element: <Password />,
       },
       {
         path: "keys",
         element: <Keys />,
-      },
-      {
-        path: "faq",
-        element: <Home />,
       },
       {
         path: "auth-successful",

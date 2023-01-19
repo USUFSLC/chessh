@@ -43,7 +43,25 @@ defmodule Chessh.Web.Endpoint do
     |> assign_jwt_and_redirect_or_encode(status, body)
   end
 
-  put "/player/password" do
+  delete "/player/token/password" do
+    player = get_player_from_jwt(conn)
+    PlayerSession.close_all_player_sessions(player)
+
+    {status, body} =
+      case Repo.update(Ecto.Changeset.change(player, %{hashed_password: nil})) do
+        {:ok, _new_player} ->
+          {200, %{success: true}}
+
+        {:error, _} ->
+          {400, %{success: false}}
+      end
+
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(status, Jason.encode!(body))
+  end
+
+  put "/player/token/password" do
     player = get_player_from_jwt(conn)
     PlayerSession.close_all_player_sessions(player)
 
@@ -66,44 +84,6 @@ defmodule Chessh.Web.Endpoint do
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(status, Jason.encode!(body))
-  end
-
-  post "/player/login" do
-    {status, body} =
-      case conn.body_params do
-        %{"username" => username, "password" => password} ->
-          player = Repo.get_by(Player, username: username)
-
-          case Player.valid_password?(player, password) do
-            true ->
-              {
-                200,
-                %{
-                  token:
-                    Token.generate_and_sign!(%{
-                      "uid" => player.id
-                    })
-                }
-              }
-
-            _ ->
-              {
-                400,
-                %{
-                  errors: "Invalid credentials"
-                }
-              }
-          end
-
-        _ ->
-          {
-            400,
-            %{errors: "Username and password must be defined"}
-          }
-      end
-
-    conn
-    |> assign_jwt_and_redirect_or_encode(status, body)
   end
 
   get "/player/logout" do
