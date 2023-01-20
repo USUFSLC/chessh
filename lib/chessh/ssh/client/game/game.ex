@@ -291,14 +291,14 @@ defmodule Chessh.SSH.Client.Game do
          },
          promotion
        ) do
+    game = Repo.get(Game, game_id)
+
     attempted_move =
       if(flipped,
         do: "#{Renderer.to_chess_coord(flip(from))}#{Renderer.to_chess_coord(flip(to))}",
         else: "#{Renderer.to_chess_coord(from)}#{Renderer.to_chess_coord(to)}"
       ) <>
         if(promotion, do: promotion, else: "")
-
-    game = Repo.get(Game, game_id)
 
     case :binbo.move(
            binbo_pid,
@@ -307,42 +307,19 @@ defmodule Chessh.SSH.Client.Game do
       {:ok, status} ->
         {:ok, fen} = :binbo.get_fen(binbo_pid)
 
-        default_changeset = %{
-          fen: fen,
-          moves: game.moves + 1,
-          turn: if(game.turn == :dark, do: :light, else: :dark)
-        }
-
-        case status do
-          :continue ->
-            {:ok, _new_game} =
-              Game.changeset(
-                game,
-                default_changeset
-              )
-              |> Repo.update()
-
-          {:draw, _} ->
-            Game.changeset(
-              game,
-              Map.merge(default_changeset, %{status: :draw})
+        {:ok, _new_game} =
+          game
+          |> Game.changeset(
+            Map.merge(
+              %{
+                fen: fen,
+                moves: game.moves + 1,
+                turn: if(game.turn == :dark, do: :light, else: :dark)
+              },
+              changeset_from_status(status)
             )
-            |> Repo.update()
-
-          {:checkmate, :white_wins} ->
-            Game.changeset(
-              game,
-              Map.merge(default_changeset, %{status: :winner, winner: :light})
-            )
-            |> Repo.update()
-
-          {:checkmate, :black_wins} ->
-            Game.changeset(
-              game,
-              Map.merge(default_changeset, %{status: :winner, winner: :dark})
-            )
-            |> Repo.update()
-        end
+          )
+          |> Repo.update()
 
         :syn.publish(:games, {:game, game_id}, {:new_move, attempted_move})
 
@@ -366,5 +343,21 @@ defmodule Chessh.SSH.Client.Game do
          } = state
        ) do
     Renderer.render_board_state(fen, state)
+  end
+
+  defp changeset_from_status(game_status) do
+    case game_status do
+      :continue ->
+        %{}
+
+      {:draw, _} ->
+        %{status: :draw}
+
+      {:checkmate, :white_wins} ->
+        %{status: :winner, winner: :light}
+
+      {:checkmate, :black_wins} ->
+        %{status: :winner, winner: :dark}
+    end
   end
 end
