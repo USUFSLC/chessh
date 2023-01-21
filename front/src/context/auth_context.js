@@ -37,14 +37,7 @@ export const AuthProvider = ({ children }) => {
     setTimeout(() => {
       setSessionOver((sessionOver) => {
         if (Date.now() >= sessionOver) {
-          setSignedIn((signedIn) => {
-            if (signedIn)
-              alert(
-                "Session expired. Any further privileged requests will fail until signed in again."
-              );
-
-            return false;
-          });
+          setSignedIn(false);
           setPlayer(null);
         }
         return sessionOver;
