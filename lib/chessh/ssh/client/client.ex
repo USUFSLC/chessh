@@ -21,13 +21,17 @@ defmodule Chessh.SSH.Client do
               screen_state_initials: []
   end
 
-  @impl true
-  def init([%State{player_session: player_session} = state]) do
+  def link_menu_screen(player_session) do
     send(
       self(),
       {:set_screen_process, Chessh.SSH.Client.MainMenu,
        %Chessh.SSH.Client.SelectPaginatePoller.State{player_session: player_session}}
     )
+  end
+
+  @impl true
+  def init([%State{player_session: player_session} = state]) do
+    link_menu_screen(player_session)
 
     {:ok, state}
   end
@@ -38,14 +42,9 @@ defmodule Chessh.SSH.Client do
         %State{
           width: width,
           height: height,
-          screen_state_initials: screen_state_initials,
-          screen_pid: screen_pid
+          screen_state_initials: screen_state_initials
         } = state
       ) do
-    if screen_pid do
-      Process.unlink(screen_pid)
-    end
-
     {:ok, new_screen_pid} =
       GenServer.start_link(module, [%{screen_state_initial | client_pid: self()}])
 
@@ -95,7 +94,8 @@ defmodule Chessh.SSH.Client do
         %State{
           width: width,
           height: height,
-          screen_pid: screen_pid
+          screen_pid: screen_pid,
+          player_session: player_session
         } = state
       ) do
     case keymap(data) do
@@ -103,7 +103,10 @@ defmodule Chessh.SSH.Client do
         {:stop, :normal, state}
 
       :previous_screen ->
-        {:noreply, go_back_one_screen(state)}
+        GenServer.stop(screen_pid)
+        link_menu_screen(player_session)
+
+        {:noreply, state}
 
       action ->
         send(screen_pid, {:input, width, height, action})
@@ -185,6 +188,7 @@ defmodule Chessh.SSH.Client do
 
   defp go_back_one_screen(
          %State{
+           screen_pid: screen_pid,
            screen_state_initials: [_ | rest_initial]
          } = state,
          previous_state
@@ -197,10 +201,10 @@ defmodule Chessh.SSH.Client do
        if(is_nil(previous_state), do: prev_state_initial, else: previous_state)}
     )
 
-    %State{state | screen_state_initials: rest_initial}
-  end
+    if screen_pid do
+      GenServer.stop(screen_pid)
+    end
 
-  defp go_back_one_screen(%State{} = state) do
-    go_back_one_screen(state, nil)
+    %State{state | screen_state_initials: rest_initial}
   end
 end

@@ -6,7 +6,7 @@ defmodule Chessh.SSH.Client.SelectJoinableGame do
   use Chessh.SSH.Client.SelectPaginatePoller
 
   def refresh_options_ms(), do: 4000
-  def max_displayed_options(), do: 1
+  def max_displayed_options(), do: 10
   def title(), do: ["-- Joinable Games --"]
   def dynamic_options(), do: true
 
