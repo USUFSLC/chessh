@@ -86,10 +86,7 @@ defmodule Chessh.PlayerSession do
                 "Player #{player.username} has #{length(expired_sessions)} expired sessions - attempting to close them"
               )
 
-              Enum.map(expired_sessions, fn session_id ->
-                :syn.publish(:player_sessions, {:session, session_id}, :session_closed)
-              end)
-
+              Enum.map(expired_sessions, &close_session/1)
               Repo.delete_all(from(p in PlayerSession, where: p.id in ^expired_sessions))
             end
 
@@ -112,8 +109,13 @@ defmodule Chessh.PlayerSession do
   def close_all_player_sessions(player) do
     player_sessions = Repo.all(from(p in PlayerSession, where: p.player_id == ^player.id))
 
-    Enum.map(player_sessions, fn session ->
-      :syn.publish(:player_sessions, {:session, session.id}, :session_closed)
-    end)
+    Enum.map(player_sessions, &close_session(&1.id))
+  end
+
+  defp close_session(id) do
+    case :syn_backbone.get_table_name(:syn_pg_by_name, :player_sessions) do
+      :undefined -> nil
+      _ -> :syn.publish(:player_sessions, {:session, id}, :session_closed)
+    end
   end
 end

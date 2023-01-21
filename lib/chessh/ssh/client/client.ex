@@ -25,8 +25,8 @@ defmodule Chessh.SSH.Client do
   def init([%State{player_session: player_session} = state]) do
     send(
       self(),
-      {:set_screen_process, Chessh.SSH.Client.Menu,
-       %Chessh.SSH.Client.Menu.State{player_session: player_session}}
+      {:set_screen_process, Chessh.SSH.Client.MainMenu,
+       %Chessh.SSH.Client.SelectPaginatePoller.State{player_session: player_session}}
     )
 
     {:ok, state}

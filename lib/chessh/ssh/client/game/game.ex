@@ -171,6 +171,11 @@ defmodule Chessh.SSH.Client.Game do
     {:noreply, new_state}
   end
 
+  def handle_info(x, state) do
+    Logger.debug("unknown message in game process #{inspect(x)}")
+    {:noreply, state}
+  end
+
   def input(
         width,
         height,

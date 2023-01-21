@@ -2,7 +2,6 @@ defmodule Chessh.SSH.Client.Game.Renderer do
   alias IO.ANSI
   alias Chessh.{Utils, Player}
   alias Chessh.SSH.Client.Game
-  require Logger
 
   @chess_board_height 8
   @chess_board_width 8
@@ -64,36 +63,11 @@ defmodule Chessh.SSH.Client.Game.Renderer do
         height: _height,
         highlighted: highlighted,
         flipped: flipped,
-        game: %Chessh.Game{
-          dark_player: %Player{username: dark_player},
-          light_player: %Player{username: light_player},
-          turn: turn,
-          status: status,
-          winner: winner
-        }
+        game: %Chessh.Game{} = game
       }) do
     rendered = [
-      Enum.join(
-        [
-          ANSI.clear_line(),
-          ANSI.format_fragment([@light_piece_color, light_player]),
-          "#{ANSI.default_color()} --vs-- ",
-          ANSI.format_fragment([@dark_piece_color, dark_player]),
-          ANSI.default_color(),
-          case status do
-            :continue ->
-              ", #{ANSI.format_fragment([if(turn == :light, do: @light_piece_color, else: @dark_piece_color), if(turn == :dark, do: dark_player, else: light_player)])} to move"
-
-            :draw ->
-              "ended in a draw"
-
-            :winner ->
-              ", #{ANSI.format_fragment([if(winner == :light, do: @light_piece_color, else: @dark_piece_color), if(winner == :dark, do: dark_player, else: light_player)])} won!"
-          end,
-          ANSI.default_color()
-        ],
-        ""
-      )
+      ANSI.clear_line(),
+      make_status_line(game, true)
       | draw_board(
           fen,
           {@tile_width, @tile_height},
@@ -109,6 +83,77 @@ defmodule Chessh.SSH.Client.Game.Renderer do
           [ANSI.cursor(i, 0), line]
         end
       )
+  end
+
+  def make_status_line(
+        %Chessh.Game{
+          light_player: light_player
+        } = game,
+        fancy
+      )
+      when is_nil(light_player),
+      do:
+        make_status_line(
+          %Chessh.Game{game | light_player: %Player{username: "(no opponent)"}},
+          fancy
+        )
+
+  def make_status_line(
+        %Chessh.Game{
+          dark_player: dark_player
+        } = game,
+        fancy
+      )
+      when is_nil(dark_player),
+      do:
+        make_status_line(
+          %Chessh.Game{game | dark_player: %Player{username: "(no opponent)"}},
+          fancy
+        )
+
+  def make_status_line(
+        %Chessh.Game{
+          id: game_id,
+          dark_player: %Player{username: dark_player},
+          light_player: %Player{username: light_player},
+          turn: turn,
+          status: status,
+          winner: winner,
+          moves: moves
+        },
+        fancy
+      ) do
+    Enum.join(
+      [
+        if(fancy,
+          do: ANSI.clear_line(),
+          else: ""
+        ),
+        "Game #{game_id} - ",
+        if(fancy,
+          do: ANSI.format_fragment([@light_piece_color, light_player]),
+          else: "#{light_player} (L)"
+        ),
+        "#{if fancy, do: ANSI.default_color(), else: ""} --vs-- ",
+        if(fancy,
+          do: ANSI.format_fragment([@dark_piece_color, dark_player]),
+          else: "#{dark_player} (D)"
+        ),
+        if(fancy, do: ANSI.default_color(), else: ""),
+        case status do
+          :continue ->
+            ", #{moves} moves, #{ANSI.format_fragment([if(fancy, do: if(turn == :light, do: @light_piece_color, else: @dark_piece_color), else: ""), if(turn == :dark, do: dark_player, else: light_player)])} to move"
+
+          :draw ->
+            "ended in a draw after #{moves} moves"
+
+          :winner ->
+            ", #{ANSI.format_fragment([if(fancy, do: if(winner == :light, do: @light_piece_color, else: @dark_piece_color), else: ""), if(winner == :dark, do: dark_player, else: light_player)])} won after #{moves} moves!"
+        end,
+        if(fancy, do: ANSI.default_color(), else: "")
+      ],
+      ""
+    )
   end
 
   defp draw_board(
