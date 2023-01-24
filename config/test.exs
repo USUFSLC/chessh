@@ -11,6 +11,13 @@ config :chessh, Chessh.Repo,
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
 
+config :hammer,
+  backend: [
+    in_memory:
+      {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]},
+    redis: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
+  ]
+
 config :chessh,
   port: 34_355,
   key_dir: Path.join(Path.dirname(__DIR__), "priv/test_keys")
