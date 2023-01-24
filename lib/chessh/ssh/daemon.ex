@@ -37,7 +37,7 @@ defmodule Chessh.SSH.Daemon do
           "#{username} on bucket #{rateId} got their password wrong, or they don't exist! Point at them and laugh!!!!"
         )
 
-        case Hammer.check_rate_inc(rateId, jail_timeout_ms, jail_attempt_threshold, 1) do
+        case Hammer.check_rate_inc(:redis, rateId, jail_timeout_ms, jail_attempt_threshold, 1) do
           {:allow, _count} ->
             Logger.debug("Bucket #{rateId} can continue to brute force though")
             false

@@ -49,7 +49,7 @@ RUN mix release
 # the compiled release and other runtime necessities
 FROM ${RUNNER_IMAGE}
 
-RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales \
+RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales redis \
   && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # Set the locale
@@ -69,7 +69,8 @@ ENV MIX_ENV="prod"
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/chessh ./
 COPY --from=builder --chown=nobody:root /app/priv /app/priv
 
-USER nobody
+# USER nobody
+USER root
 
 EXPOSE 8080
 EXPOSE 34355

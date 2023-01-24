@@ -76,6 +76,7 @@ defmodule Chessh.SSH.Client do
       |> Keyword.values()
 
     case Hammer.check_rate_inc(
+           :in_memory,
            "player-session-#{state.player_session.id}-burst-message-rate",
            burst_ms,
            burst_rate,

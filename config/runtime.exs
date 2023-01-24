@@ -1,5 +1,20 @@
 import Config
 
+config :hammer,
+  backend: [
+    in_memory:
+      {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]},
+    redis:
+      {Hammer.Backend.Redis,
+       [
+         expiry_ms: 60_000 * 60 * 2,
+         redix_config: [
+           host: System.get_env("REDIS_HOST", "localhost"),
+           port: String.to_integer(System.get_env("REDIS_PORT", "6379"))
+         ]
+       ]}
+  ]
+
 config :chessh,
   port: String.to_integer(System.get_env("SSH_PORT", "42069"))
 
