@@ -96,22 +96,22 @@ defmodule Chessh.SSH.Client.Game do
     end
 
     binbo_pid = initialize_game(game_id, fen)
-
     new_game = Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player])
 
     player_color =
       if(new_game.light_player_id == player_session.player_id, do: :light, else: :dark)
 
-    send(client_pid, {:send_to_ssh, Utils.clear_codes()})
+    new_state = %State{
+      state
+      | binbo_pid: binbo_pid,
+        color: player_color,
+        game: new_game,
+        flipped: player_color == :dark
+    }
 
-    {:ok,
-     %State{
-       state
-       | binbo_pid: binbo_pid,
-         color: player_color,
-         game: new_game,
-         flipped: player_color == :dark
-     }}
+    send(client_pid, {:send_to_ssh, [Utils.clear_codes() | render_state(new_state)]})
+
+    {:ok, new_state}
   end
 
   def init([

@@ -7,6 +7,7 @@ defmodule Chessh.SSH.Client.SelectJoinableGame do
 
   def refresh_options_ms(), do: 4000
   def max_displayed_options(), do: 10
+  def tick_delay_ms(), do: 600
   def title(), do: ["-- Joinable Games --"]
   def dynamic_options(), do: true
 
@@ -16,8 +17,8 @@ defmodule Chessh.SSH.Client.SelectJoinableGame do
       |> where([g], g.status == :continue)
       |> where(
         [g],
-        (is_nil(g.dark_player_id) or g.dark_player_id != ^player_id) and
-          (is_nil(g.light_player_id) or g.light_player_id != ^player_id)
+        (is_nil(g.dark_player_id) or is_nil(g.light_player_id)) and
+          (g.dark_player_id != ^player_id or g.light_player_id != ^player_id)
       )
       |> limit(^max_displayed_options()),
       current_id,
@@ -36,7 +37,7 @@ defmodule Chessh.SSH.Client.SelectJoinableGame do
     {_label, previous_last_game_id} = List.last(options)
     next_games = get_player_joinable_games_with_id(player_id, previous_last_game_id, :desc)
 
-    if length(next_games) > 0,
+    if !is_nil(next_games) && length(next_games) > 0,
       do:
         next_games
         |> Enum.map(&format_game_selection_tuple/1),
@@ -51,7 +52,7 @@ defmodule Chessh.SSH.Client.SelectJoinableGame do
 
     previous_games = get_player_joinable_games_with_id(player_id, previous_first_game_id, :asc)
 
-    if length(previous_games) > 0,
+    if !is_nil(previous_games) && length(previous_games) > 0,
       do:
         previous_games
         |> Enum.map(&format_game_selection_tuple/1),
@@ -63,14 +64,24 @@ defmodule Chessh.SSH.Client.SelectJoinableGame do
     |> Enum.map(&format_game_selection_tuple/1)
   end
 
-  def refresh_options(%State{options: options}) do
-    from(g in Game,
-      where: g.id in ^Enum.map(options, fn {_, id} -> id end),
-      order_by: [desc: g.id]
-    )
-    |> Repo.all()
-    |> Repo.preload([:light_player, :dark_player])
-    |> Enum.map(&format_game_selection_tuple/1)
+  def refresh_options(%State{
+        options: options,
+        player_session: %PlayerSession{player_id: player_id}
+      }) do
+    previous_last_game_id =
+      case List.last(options) do
+        {_label, id} -> id
+        _ -> 0
+      end
+
+    current_screen_games =
+      get_player_joinable_games_with_id(player_id, previous_last_game_id - 1, :asc)
+
+    if !is_nil(current_screen_games) && length(current_screen_games),
+      do:
+        current_screen_games
+        |> Enum.map(&format_game_selection_tuple/1),
+      else: options
   end
 
   def make_process_tuple(selected_id, %State{

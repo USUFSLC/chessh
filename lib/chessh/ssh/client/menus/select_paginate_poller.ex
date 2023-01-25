@@ -189,7 +189,7 @@ defmodule Chessh.SSH.Client.SelectPaginatePoller do
           title() ++
             [""] ++
             render_lines(width, height, state) ++
-            if dynamic_options(), do: ["", "<= Previous | Next =>"], else: []
+            if dynamic_options(), do: ["", "<- Previous | Next ->"], else: []
 
         {y, x} = Utils.center_rect({min(width, max_box_cols()), length(lines)}, {width, height})
 
@@ -214,12 +214,12 @@ defmodule Chessh.SSH.Client.SelectPaginatePoller do
           Enum.map(
             Enum.zip(0..(max_displayed_options() - 1), options),
             fn {i, {line, _}} ->
-              box_cols = min(max_box_cols(), width)
+              box_cols = min(max_box_cols(), width) - 2
               linelen = String.length(line)
 
               line =
                 if linelen > box_cols do
-                  delta = max(box_cols - 3 - 1, 0)
+                  delta = max(box_cols - 3 - 1 - if(i == selected_option_idx, do: 4, else: 0), 0)
                   overflow = linelen - delta
                   start = if i == selected_option_idx, do: rem(tick, overflow), else: 0
                   "#{String.slice(line, start..(start + delta))}..."
@@ -238,7 +238,7 @@ defmodule Chessh.SSH.Client.SelectPaginatePoller do
             end
           )
         else
-          ["Looks like there's nothing here.", "Use Ctrl+b to go back"]
+          ["Looks like there's nothing here.", "Use Ctrl+b to go back."]
         end
       end
 

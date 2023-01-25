@@ -7,7 +7,7 @@ defmodule Chessh.SSH.Client.SelectCurrentGame do
   use Chessh.SSH.Client.SelectPaginatePoller
 
   def refresh_options_ms(), do: 4000
-  def max_displayed_options(), do: 10
+  def max_displayed_options(), do: 5
   def title(), do: ["-- Current Games --"]
   def dynamic_options(), do: true
 
@@ -69,6 +69,26 @@ defmodule Chessh.SSH.Client.SelectCurrentGame do
     |> Repo.all()
     |> Repo.preload([:light_player, :dark_player])
     |> Enum.map(&format_game_selection_tuple/1)
+  end
+
+  def refresh_options(%State{
+        options: options,
+        player_session: %PlayerSession{player_id: player_id}
+      }) do
+    previous_last_game_id =
+      case List.last(options) do
+        {_label, id} -> id
+        _ -> 0
+      end
+
+    current_screen_games =
+      get_player_sorted_current_games_with_id(player_id, previous_last_game_id - 1, :asc)
+
+    if !is_nil(current_screen_games) && length(current_screen_games),
+      do:
+        current_screen_games
+        |> Enum.map(&format_game_selection_tuple/1),
+      else: options
   end
 
   def make_process_tuple(selected_id, %State{
