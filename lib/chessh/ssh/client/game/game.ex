@@ -185,7 +185,8 @@ defmodule Chessh.SSH.Client.Game do
           cursor: %{x: cursor_x, y: cursor_y} = cursor,
           client_pid: client_pid,
           flipped: flipped,
-          binbo_pid: binbo_pid
+          binbo_pid: binbo_pid,
+          color: color
         } = state
       ) do
     new_cursor =
@@ -237,12 +238,12 @@ defmodule Chessh.SSH.Client.Game do
           1 ->
             # Light pawn
             {y, _} = maybe_flipped_to
-            y == 0
+            y == 0 && color == :light
 
           17 ->
             # Dark pawn
             {y, _} = maybe_flipped_to
-            y == Renderer.chess_board_height() - 1
+            y == Renderer.chess_board_height() - 1 && color == :dark
 
           _ ->
             false
