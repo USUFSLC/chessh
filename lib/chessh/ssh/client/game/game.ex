@@ -198,13 +198,29 @@ defmodule Chessh.SSH.Client.Game do
         _ -> cursor
       end
 
+    maybe_flipped_cursor_tup =
+      if flipped, do: flip({new_cursor.y, new_cursor.x}), else: {new_cursor.y, new_cursor.x}
+
+    piece_type =
+      :binbo_position.get_piece(
+        :binbo_board.notation_to_index(Renderer.to_chess_coord(maybe_flipped_cursor_tup)),
+        :binbo.game_state(binbo_pid)
+      )
+
     {new_move_from, move_to} =
       if action == :return do
         coords = {new_cursor.y, new_cursor.x}
 
         case move_from do
-          nil -> {coords, nil}
-          _ -> {nil, coords}
+          nil ->
+            if piece_type != 0 do
+              {coords, nil}
+            else
+              {move_from, nil}
+            end
+
+          _ ->
+            {nil, coords}
         end
       else
         {move_from, nil}
@@ -224,14 +240,7 @@ defmodule Chessh.SSH.Client.Game do
     }
 
     if move_from && move_to do
-      maybe_flipped_from = if flipped, do: flip(move_from), else: move_from
       maybe_flipped_to = if flipped, do: flip(move_to), else: move_to
-
-      piece_type =
-        :binbo_position.get_piece(
-          :binbo_board.notation_to_index(Renderer.to_chess_coord(maybe_flipped_from)),
-          :binbo.game_state(binbo_pid)
-        )
 
       promotion_possible =
         case piece_type do
