@@ -10,8 +10,8 @@ defmodule Chessh.SSH.Client.Game.Renderer do
   @tile_height 4
 
   @previous_move_background ANSI.light_yellow_background()
-  @from_select_background ANSI.light_magenta_background()
-  @to_select_background ANSI.light_magenta_background()
+  @from_select_background ANSI.light_green_background()
+  @to_select_background ANSI.light_green_background()
   @dark_piece_color ANSI.red()
   @light_piece_color ANSI.light_cyan()
 
@@ -26,8 +26,16 @@ defmodule Chessh.SSH.Client.Game.Renderer do
     "#{List.to_string([?a + x])}#{@chess_board_height - y}"
   end
 
+  def flip({y, x}),
+    do: {@chess_board_height - 1 - y, @chess_board_width - 1 - x}
+
+  def from_chess_coord(s, flipped \\ false) do
+    [x, y | _] = String.downcase(s) |> String.to_charlist()
+    coords = {?8 - y, x - ?i + @chess_board_width}
+    if flipped, do: flip(coords), else: coords
+  end
+
   def render_board_state(
-        fen,
         %Game.State{
           game:
             %Chessh.Game{
@@ -36,14 +44,13 @@ defmodule Chessh.SSH.Client.Game.Renderer do
         } = state
       )
       when is_nil(light_player) do
-    render_board_state(fen, %Game.State{
+    render_board_state(%Game.State{
       state
       | game: %Chessh.Game{game | light_player: %Player{username: "(no opponent)"}}
     })
   end
 
   def render_board_state(
-        fen,
         %Game.State{
           game:
             %Chessh.Game{
@@ -52,18 +59,21 @@ defmodule Chessh.SSH.Client.Game.Renderer do
         } = state
       )
       when is_nil(dark_player) do
-    render_board_state(fen, %Game.State{
+    render_board_state(%Game.State{
       state
       | game: %Chessh.Game{game | dark_player: %Player{username: "(no opponent)"}}
     })
   end
 
-  def render_board_state(fen, %Game.State{
+  def render_board_state(%Game.State{
         width: _width,
         height: _height,
         highlighted: highlighted,
         flipped: flipped,
-        game: %Chessh.Game{} = game
+        game:
+          %Chessh.Game{
+            fen: fen
+          } = game
       }) do
     rendered = [
       ANSI.clear_line(),

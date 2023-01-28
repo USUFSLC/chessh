@@ -6,6 +6,7 @@ defmodule Chessh.Game do
   schema "games" do
     field(:fen, :string)
     field(:moves, :integer, default: 0)
+    field(:last_move, :string)
 
     field(:turn, Ecto.Enum, values: [:light, :dark], default: :light)
     field(:winner, Ecto.Enum, values: [:light, :dark, :none], default: :none)
@@ -25,6 +26,7 @@ defmodule Chessh.Game do
       :turn,
       :winner,
       :status,
+      :last_move,
       :light_player_id,
       :dark_player_id
     ])
