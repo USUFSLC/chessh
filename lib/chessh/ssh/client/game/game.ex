@@ -101,15 +101,24 @@ defmodule Chessh.SSH.Client.Game do
     player_color =
       if(new_game.light_player_id == player_session.player_id, do: :light, else: :dark)
 
-    new_state = %State{
-      state
-      | binbo_pid: binbo_pid,
-        color: player_color,
-        game: new_game,
-        flipped: player_color == :dark
-    }
+    new_state =
+      (fn new_state ->
+         %State{
+           new_state
+           | highlighted: make_highlight_map(new_state)
+         }
+       end).(%State{
+        state
+        | binbo_pid: binbo_pid,
+          color: player_color,
+          game: new_game,
+          flipped: player_color == :dark
+      })
 
-    send(client_pid, {:send_to_ssh, [Utils.clear_codes() | render_state(new_state)]})
+    send(
+      client_pid,
+      {:send_to_ssh, [Utils.clear_codes() | Renderer.render_board_state(new_state)]}
+    )
 
     {:ok, new_state}
   end
@@ -147,16 +156,26 @@ defmodule Chessh.SSH.Client.Game do
 
   def handle_info(
         {:new_move, move},
-        %State{game: %Game{id: game_id}, client_pid: client_pid, binbo_pid: binbo_pid} = state
+        %State{
+          game: %Game{id: game_id},
+          client_pid: client_pid,
+          binbo_pid: binbo_pid
+        } = state
       ) do
     :binbo.move(binbo_pid, move)
 
-    new_state = %State{
-      state
-      | game: Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player])
-    }
+    new_state =
+      (fn new_state ->
+         %State{
+           new_state
+           | highlighted: make_highlight_map(new_state)
+         }
+       end).(%State{
+        state
+        | game: Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player])
+      })
 
-    send(client_pid, {:send_to_ssh, render_state(new_state)})
+    send(client_pid, {:send_to_ssh, Renderer.render_board_state(new_state)})
 
     {:noreply, new_state}
   end
@@ -167,7 +186,7 @@ defmodule Chessh.SSH.Client.Game do
       ) do
     game = Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player])
     new_state = %State{state | game: game}
-    send(client_pid, {:send_to_ssh, render_state(new_state)})
+    send(client_pid, {:send_to_ssh, Renderer.render_board_state(new_state)})
     {:noreply, new_state}
   end
 
@@ -199,7 +218,9 @@ defmodule Chessh.SSH.Client.Game do
       end
 
     maybe_flipped_cursor_tup =
-      if flipped, do: flip({new_cursor.y, new_cursor.x}), else: {new_cursor.y, new_cursor.x}
+      if flipped,
+        do: Renderer.flip({new_cursor.y, new_cursor.x}),
+        else: {new_cursor.y, new_cursor.x}
 
     piece_type =
       :binbo_position.get_piece(
@@ -226,21 +247,27 @@ defmodule Chessh.SSH.Client.Game do
         {move_from, nil}
       end
 
-    new_state = %State{
-      state
-      | cursor: new_cursor,
-        move_from: new_move_from,
-        highlighted: %{
-          {new_cursor.y, new_cursor.x} => Renderer.to_select_background(),
-          new_move_from => Renderer.from_select_background()
-        },
-        width: width,
-        height: height,
-        flipped: if(action == "f", do: !flipped, else: flipped)
-    }
+    new_state =
+      (fn new_state ->
+         %State{
+           new_state
+           | highlighted:
+               make_highlight_map(new_state, %{
+                 {new_cursor.y, new_cursor.x} => Renderer.to_select_background(),
+                 new_move_from => Renderer.from_select_background()
+               })
+         }
+       end).(%State{
+        state
+        | cursor: new_cursor,
+          move_from: new_move_from,
+          width: width,
+          height: height,
+          flipped: if(action == "f", do: !flipped, else: flipped)
+      })
 
     if move_from && move_to do
-      maybe_flipped_to = if flipped, do: flip(move_to), else: move_to
+      maybe_flipped_to = if flipped, do: Renderer.flip(move_to), else: move_to
 
       promotion_possible =
         case piece_type do
@@ -278,13 +305,13 @@ defmodule Chessh.SSH.Client.Game do
       end
     end
 
-    send(client_pid, {:send_to_ssh, render_state(new_state)})
+    send(client_pid, {:send_to_ssh, Renderer.render_board_state(new_state)})
     new_state
   end
 
   def render(width, height, %State{client_pid: client_pid} = state) do
     new_state = %State{state | width: width, height: height}
-    send(client_pid, {:send_to_ssh, render_state(new_state)})
+    send(client_pid, {:send_to_ssh, Renderer.render_board_state(new_state)})
     new_state
   end
 
@@ -308,11 +335,14 @@ defmodule Chessh.SSH.Client.Game do
        ) do
     game = Repo.get(Game, game_id)
 
+    [from, to] =
+      [from, to]
+      |> Enum.map(fn coord -> if flipped, do: Renderer.flip(coord), else: coord end)
+      |> Enum.map(&Renderer.to_chess_coord/1)
+
     attempted_move =
-      if(flipped,
-        do: "#{Renderer.to_chess_coord(flip(from))}#{Renderer.to_chess_coord(flip(to))}",
-        else: "#{Renderer.to_chess_coord(from)}#{Renderer.to_chess_coord(to)}"
-      ) <>
+      from <>
+        to <>
         if(promotion, do: promotion, else: "")
 
     case :binbo.move(
@@ -329,7 +359,8 @@ defmodule Chessh.SSH.Client.Game do
               %{
                 fen: fen,
                 moves: game.moves + 1,
-                turn: if(game.turn == :dark, do: :light, else: :dark)
+                turn: if(game.turn == :dark, do: :light, else: :dark),
+                last_move: attempted_move
               },
               changeset_from_status(status)
             )
@@ -338,26 +369,15 @@ defmodule Chessh.SSH.Client.Game do
 
         :syn.publish(:games, {:game, game_id}, {:new_move, attempted_move})
 
-      x ->
-        Logger.debug(inspect(x))
+      _ ->
         nil
     end
   end
 
   defp attempt_move(_, _, _, _) do
     Logger.debug("No matching clause for move attempt - must be illegal?")
+
     nil
-  end
-
-  defp flip({y, x}),
-    do: {Renderer.chess_board_height() - 1 - y, Renderer.chess_board_width() - 1 - x}
-
-  defp render_state(
-         %State{
-           game: %Game{fen: fen}
-         } = state
-       ) do
-    Renderer.render_board_state(fen, state)
   end
 
   defp changeset_from_status(game_status) do
@@ -374,5 +394,27 @@ defmodule Chessh.SSH.Client.Game do
       {:checkmate, :black_wins} ->
         %{status: :winner, winner: :dark}
     end
+  end
+
+  defp make_highlight_map(
+         %State{
+           game: %Game{last_move: last_move},
+           flipped: flipped
+         },
+         extra_highlights \\ %{}
+       ) do
+    if last_move do
+      [prev_move_from, prev_move_to] =
+        [String.slice(last_move, 0..1), String.slice(last_move, 2..4)]
+        |> Enum.map(fn coord -> Renderer.from_chess_coord(coord, flipped) end)
+
+      %{
+        prev_move_from => Renderer.previous_move_background(),
+        prev_move_to => Renderer.previous_move_background()
+      }
+    else
+      %{}
+    end
+    |> Map.merge(extra_highlights)
   end
 end
