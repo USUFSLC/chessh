@@ -60,7 +60,7 @@ defmodule Chessh.SSH.Daemon do
     do: pwd_authenticate(username, password, inet)
 
   def handle_info(:start, state) do
-    port = Application.fetch_env!(:chessh, :port)
+    port = Application.fetch_env!(:chessh, :ssh_port)
     key_dir = String.to_charlist(Application.fetch_env!(:chessh, :key_dir))
     max_sessions = Application.fetch_env!(:chessh, :max_sessions)
 

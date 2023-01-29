@@ -20,7 +20,7 @@ const KeyCard = ({ onDelete, props }) => {
   const deleteThisKey = () => {
     if (
       window.confirm(
-        "Are you sure? This will close all your current ssh sessions."
+        "Are you sure? This will close all your currently opened ssh sessions."
       )
     ) {
       fetch(`/api/keys/${id}`, {

@@ -6,7 +6,6 @@ import "asciinema-player/dist/bundle/asciinema-player.css";
 
 const demoProps = {
   theme: "tango",
-  startAt: 12,
   autoPlay: true,
 };
 

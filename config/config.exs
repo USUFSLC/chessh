@@ -15,7 +15,6 @@ config :chessh, RateLimits,
   player_public_keys: 15
 
 config :chessh, Web,
-  port: 8080,
   github_oauth_login_url: "https://github.com/login/oauth/access_token",
   github_user_api_url: "https://api.github.com/user"
 

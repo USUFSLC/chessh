@@ -19,6 +19,9 @@ export const Root = () => {
           <div className="nav">
             {signedIn ? (
               <>
+                <Link className="link" to="/home">
+                  Home
+                </Link>
                 <Link className="link" to="/password">
                   Password
                 </Link>

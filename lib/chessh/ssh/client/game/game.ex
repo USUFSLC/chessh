@@ -41,6 +41,7 @@ defmodule Chessh.SSH.Client.Game do
         | tail
       ])
       when is_nil(color) do
+    # Joining a game
     {is_dark, is_light} = {player_id == dark_player_id, player_id == light_player_id}
 
     new_state =
@@ -55,6 +56,35 @@ defmodule Chessh.SSH.Client.Game do
       end
 
     init([new_state | tail])
+  end
+
+  def init([
+        %State{player_session: player_session, color: color, game: nil} = state
+        | tail
+      ]) do
+    # Starting a new game
+    {:ok, %Game{} = game} =
+      Game.changeset(
+        %Game{},
+        Map.merge(
+          if(color == :light,
+            do: %{light_player_id: player_session.player_id},
+            else: %{dark_player_id: player_session.player_id}
+          ),
+          %{
+            fen: @default_fen
+          }
+        )
+      )
+      |> Repo.insert()
+
+    init([
+      %State{
+        state
+        | game: game
+      }
+      | tail
+    ])
   end
 
   def init([
@@ -96,10 +126,9 @@ defmodule Chessh.SSH.Client.Game do
     end
 
     binbo_pid = initialize_game(game_id, fen)
-    new_game = Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player])
+    game = Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player])
 
-    player_color =
-      if(new_game.light_player_id == player_session.player_id, do: :light, else: :dark)
+    player_color = if(game.light_player_id == player_session.player_id, do: :light, else: :dark)
 
     new_state =
       (fn new_state ->
@@ -111,7 +140,7 @@ defmodule Chessh.SSH.Client.Game do
         state
         | binbo_pid: binbo_pid,
           color: player_color,
-          game: new_game,
+          game: game,
           flipped: player_color == :dark
       })
 
@@ -121,37 +150,6 @@ defmodule Chessh.SSH.Client.Game do
     )
 
     {:ok, new_state}
-  end
-
-  def init([
-        %State{player_session: player_session, color: color, client_pid: client_pid, game: nil} =
-          state
-        | _
-      ]) do
-    {:ok, %Game{id: game_id, fen: fen}} =
-      Game.changeset(
-        %Game{},
-        Map.merge(
-          if(color == :light,
-            do: %{light_player_id: player_session.player_id},
-            else: %{dark_player_id: player_session.player_id}
-          ),
-          %{
-            fen: @default_fen
-          }
-        )
-      )
-      |> Repo.insert()
-
-    binbo_pid = initialize_game(game_id, fen)
-    send(client_pid, {:send_to_ssh, Utils.clear_codes()})
-
-    {:ok,
-     %State{
-       state
-       | game: Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player]),
-         binbo_pid: binbo_pid
-     }}
   end
 
   def handle_info(
@@ -210,11 +208,20 @@ defmodule Chessh.SSH.Client.Game do
       ) do
     new_cursor =
       case action do
-        :left -> %{y: cursor_y, x: Utils.wrap_around(cursor_x, -1, Renderer.chess_board_width())}
-        :right -> %{y: cursor_y, x: Utils.wrap_around(cursor_x, 1, Renderer.chess_board_width())}
-        :down -> %{y: Utils.wrap_around(cursor_y, 1, Renderer.chess_board_height()), x: cursor_x}
-        :up -> %{y: Utils.wrap_around(cursor_y, -1, Renderer.chess_board_height()), x: cursor_x}
-        _ -> cursor
+        :left ->
+          %{y: cursor_y, x: Utils.wrap_around(cursor_x, -1, Renderer.chess_board_width())}
+
+        :right ->
+          %{y: cursor_y, x: Utils.wrap_around(cursor_x, 1, Renderer.chess_board_width())}
+
+        :down ->
+          %{y: Utils.wrap_around(cursor_y, 1, Renderer.chess_board_height()), x: cursor_x}
+
+        :up ->
+          %{y: Utils.wrap_around(cursor_y, -1, Renderer.chess_board_height()), x: cursor_x}
+
+        _ ->
+          cursor
       end
 
     maybe_flipped_cursor_tup =

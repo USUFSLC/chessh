@@ -24,16 +24,10 @@ export const AuthSuccessful = () => {
     return (
       <>
         <h3>Hello there, {player?.username || ""}! </h3>
-        <div>
-          <span> If you have not already done so: </span>
-          <Link to="/keys" className="button">
-            Add a Public Key
-          </Link>
-        </div>
-        <br />
+        <p>You've successfully been authenticated.</p>
         <div>
           <Link to="/home" className="button">
-            Go Home
+            Get Started
           </Link>
         </div>
       </>

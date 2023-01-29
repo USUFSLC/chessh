@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
     fetch("/api/player/logout", {
       method: "GET",
       credentials: "same-origin",
-    }).then(() => setDefaults());
+    }).then(setDefaults);
 
   useEffect(() => {
     setTimeout(() => {

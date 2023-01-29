@@ -103,7 +103,7 @@ defmodule Chessh.SSH.Client do
       :quit ->
         {:stop, :normal, state}
 
-      :previous_screen ->
+      :menu ->
         GenServer.stop(screen_pid)
         link_menu_screen(player_session)
 
@@ -153,7 +153,9 @@ defmodule Chessh.SSH.Client do
       <<3>> -> :quit
       <<4>> -> :quit
       # C-b
-      <<2>> -> :previous_screen
+      <<2>> -> :menu
+      # Escape
+      "\e" -> :menu
       # Arrow keys
       "\e[A" -> :up
       "\e[B" -> :down

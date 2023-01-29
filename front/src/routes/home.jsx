@@ -49,6 +49,19 @@ export const Home = () => {
               codeBlock
             />
           </div>
+          <div>
+            <li>Finally, play chess!</li>
+            <p>Ideally, keeping the following contols in mind:</p>
+            <ul>
+              <li>Ctrl + b / Escape to return to the main menu.</li>
+              <li>Ctrl + c / Ctrl + d to exit at any point.</li>
+              <li>Arrow keys to move around the board.</li>
+              <li>
+                Select a piece with "enter", and move it to a square by pressing
+                "enter" again.
+              </li>
+            </ul>
+          </div>
         </ol>
       </>
     );
