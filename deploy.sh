@@ -42,7 +42,7 @@ docker run \
   --env-file $env_file \
   --network $project_name \
   --name $project_name-server \
-  --publish "${host}:${host_ssh_port}:${container_ssh_port}/tcp" \
+  --publish "${HOST}:${SSH_PORT}:${SSH_PORT}/tcp" \
   --net-alias server \
   chessh/server
 
@@ -52,6 +52,6 @@ docker run \
   --env-file $env_file \
   --network $project_name \
   --name $project_name-frontend \
-  --publish "${HOST}:${PORT}:80/tcp" \
+  --publish "${HOST}:${WEB_PORT}:80/tcp" \
   --net-alias frontend \
   chessh/frontend

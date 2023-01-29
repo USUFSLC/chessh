@@ -19,5 +19,5 @@ config :hammer,
   ]
 
 config :chessh,
-  port: 34_355,
+  ssh_port: 34_355,
   key_dir: Path.join(Path.dirname(__DIR__), "priv/test_keys")

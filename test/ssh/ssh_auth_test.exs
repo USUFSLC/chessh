@@ -38,7 +38,7 @@ defmodule Chessh.SSH.AuthTest do
     send(
       parent,
       {:attempted,
-       :ssh.connect(@localhost, Application.fetch_env!(:chessh, :port),
+       :ssh.connect(@localhost, Application.fetch_env!(:chessh, :ssh_port),
          user: String.to_charlist(@valid_user.username),
          password: String.to_charlist(@valid_user.password),
          auth_methods: auth_method,
@@ -90,7 +90,7 @@ defmodule Chessh.SSH.AuthTest do
 
     Task.Supervisor.start_child(sup, fn ->
       {:ok, conn} =
-        :ssh.connect(@localhost, Application.fetch_env!(:chessh, :port),
+        :ssh.connect(@localhost, Application.fetch_env!(:chessh, :ssh_port),
           user: String.to_charlist(@valid_user.username),
           password: String.to_charlist(@valid_user.password),
           auth_methods: 'password',
@@ -105,7 +105,7 @@ defmodule Chessh.SSH.AuthTest do
 
     Task.Supervisor.start_child(sup, fn ->
       {:ok, conn} =
-        :ssh.connect(@localhost, Application.fetch_env!(:chessh, :port),
+        :ssh.connect(@localhost, Application.fetch_env!(:chessh, :ssh_port),
           user: String.to_charlist(@valid_user.username),
           auth_methods: 'publickey',
           silently_accept_hosts: true,
