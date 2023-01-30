@@ -69,8 +69,7 @@ ENV MIX_ENV="prod"
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/chessh ./
 COPY --from=builder --chown=nobody:root /app/priv /app/priv
 
-# USER nobody
-USER root
+USER nobody
 
 EXPOSE 8080
 EXPOSE 34355
