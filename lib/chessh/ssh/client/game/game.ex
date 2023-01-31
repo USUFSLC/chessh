@@ -59,32 +59,59 @@ defmodule Chessh.SSH.Client.Game do
   end
 
   def init([
-        %State{player_session: player_session, color: color, game: nil} = state
+        %State{player_session: player_session, color: color, game: nil, client_pid: client_pid} =
+          state
         | tail
       ]) do
-    # Starting a new game
-    {:ok, %Game{} = game} =
-      Game.changeset(
-        %Game{},
-        Map.merge(
-          if(color == :light,
-            do: %{light_player_id: player_session.player_id},
-            else: %{dark_player_id: player_session.player_id}
-          ),
-          %{
-            fen: @default_fen
-          }
-        )
-      )
-      |> Repo.insert()
+    [create_game_ms, create_game_rate] =
+      Application.get_env(:chessh, RateLimits)
+      |> Keyword.take([:create_game_ms, :create_game_rate])
+      |> Keyword.values()
 
-    init([
-      %State{
-        state
-        | game: game
-      }
-      | tail
-    ])
+    case Hammer.check_rate_inc(
+           :redis,
+           "player-#{state.player_session.id}-create-game-rate",
+           create_game_ms,
+           create_game_rate,
+           1
+         ) do
+      {:allow, _count} ->
+        # Starting a new game
+        {:ok, %Game{} = game} =
+          Game.changeset(
+            %Game{},
+            Map.merge(
+              if(color == :light,
+                do: %{light_player_id: player_session.player_id},
+                else: %{dark_player_id: player_session.player_id}
+              ),
+              %{
+                fen: @default_fen
+              }
+            )
+          )
+          |> Repo.insert()
+
+        init([
+          %State{
+            state
+            | game: game
+          }
+          | tail
+        ])
+
+      {:deny, _limit} ->
+        send(
+          client_pid,
+          {:send_to_ssh,
+           [
+             Utils.clear_codes(),
+             "You are creating too many games, and have been rate limited. Try again later.\n"
+           ]}
+        )
+
+        {:stop, :normal, state}
+    end
   end
 
   def init([

@@ -45,17 +45,20 @@ defmodule Chessh.SSH.Client do
           screen_state_initials: screen_state_initials
         } = state
       ) do
-    {:ok, new_screen_pid} =
-      GenServer.start_link(module, [%{screen_state_initial | client_pid: self()}])
+    case GenServer.start_link(module, [%{screen_state_initial | client_pid: self()}]) do
+      {:ok, new_screen_pid} ->
+        send(new_screen_pid, {:render, width, height})
 
-    send(new_screen_pid, {:render, width, height})
+        {:noreply,
+         %State{
+           state
+           | screen_pid: new_screen_pid,
+             screen_state_initials: [{module, screen_state_initial} | screen_state_initials]
+         }}
 
-    {:noreply,
-     %State{
-       state
-       | screen_pid: new_screen_pid,
-         screen_state_initials: [{module, screen_state_initial} | screen_state_initials]
-     }}
+      _ ->
+        {:noreply, state}
+    end
   end
 
   @impl true

@@ -12,7 +12,9 @@ config :chessh, RateLimits,
   max_concurrent_user_sessions: 5,
   player_session_message_burst_ms: 500,
   player_session_message_burst_rate: 8,
-  player_public_keys: 15
+  player_public_keys: 15,
+  create_game_ms: 60 * 1000,
+  create_game_rate: 2
 
 config :chessh, Web,
   github_oauth_login_url: "https://github.com/login/oauth/access_token",
