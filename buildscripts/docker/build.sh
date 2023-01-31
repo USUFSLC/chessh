@@ -1,10 +1,10 @@
 #!/bin/bash
 
-env_file=.env.prod
+env_file=../../.env.prod
 
 export $(cat $env_file | xargs) 
 
-docker build . -t chessh/server
+docker build ../.. -t chessh/server
 
 cd front
 docker build \

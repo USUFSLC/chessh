@@ -1,7 +1,7 @@
 #!/bin/bash
 
 datestamp=$(date +%Y%m%d-%H%M)
-env_file=.env.prod
+env_file=../../.env.prod
 project_name=chessh
 container_names=("chessh-redis" "chessh-database" "chessh-server" "chessh-frontend")
 

@@ -1,0 +1,19 @@
+[Unit]
+Description=CheSSH Server
+After=docker.service
+BindsTo=docker.service
+ReloadPropagatedFrom=docker.service
+WantedBy=default.target
+
+[Service]
+Restart=always
+ExecStartPre=-/usr/bin/docker stop chessh-server
+ExecStartPre=-/usr/bin/docker rm chessh-server
+ExecStart=/usr/bin/docker run \
+                          --env-file $BUILD_ENV \
+                          --network=host \
+                          --name chessh-server \
+                          chessh/server
+
+[Install]
+WantedBy=multi-user.target
