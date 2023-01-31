@@ -1,14 +1,14 @@
 import Config
 
 config :chessh,
-  ssh_port: String.to_integer(System.get_env("SSH_PORT", "42069"))
+  ssh_port: String.to_integer(System.get_env("SSH_PORT", "34355"))
 
 config :chessh, Web,
-  github_client_id: System.get_env("GITHUB_CLIENT_ID"),
-  github_client_secret: System.get_env("GITHUB_CLIENT_SECRET"),
-  github_user_agent: System.get_env("GITHUB_USER_AGENT"),
+  discord_client_id: System.get_env("DISCORD_CLIENT_ID"),
+  discord_client_secret: System.get_env("DISCORD_CLIENT_SECRET"),
+  discord_user_agent: System.get_env("DISCORD_USER_AGENT"),
   client_redirect_after_successful_sign_in:
-    System.get_env("CLIENT_REDIRECT_AFTER_OAUTH", "http://localhost:3000"),
+    System.get_env("CLIENT_REDIRECT_AFTER_OAUTH", "http://127.0.0.1:3000/oauth-successfule"),
   port: String.to_integer(System.get_env("WEB_PORT", "8080"))
 
 config :joken,

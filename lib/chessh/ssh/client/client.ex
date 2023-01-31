@@ -1,7 +1,5 @@
 defmodule Chessh.SSH.Client do
   alias IO.ANSI
-  require Logger
-
   use GenServer
 
   @clear_codes [
@@ -164,6 +162,10 @@ defmodule Chessh.SSH.Client do
       "\e[B" -> :down
       "\e[D" -> :left
       "\e[C" -> :right
+      "\eOA" -> :up
+      "\eOB" -> :down
+      "\eOD" -> :left
+      "\eOC" -> :right
       "\r" -> :return
       x -> x
     end

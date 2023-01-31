@@ -5,7 +5,7 @@ defmodule Chessh.Player do
 
   @derive {Inspect, except: [:password]}
   schema "players" do
-    field(:github_id, :integer)
+    field(:discord_id, :string)
 
     field(:username, :string)
 
@@ -24,7 +24,7 @@ defmodule Chessh.Player do
   defimpl Jason.Encoder, for: Chessh.Player do
     def encode(value, opts) do
       Jason.Encode.map(
-        Map.take(value, [:id, :github_id, :username, :created_at, :updated_at]),
+        Map.take(value, [:id, :discord_id, :username, :created_at, :updated_at]),
         opts
       )
     end
@@ -37,7 +37,7 @@ defmodule Chessh.Player do
 
   def registration_changeset(player, attrs, opts \\ []) do
     player
-    |> cast(attrs, [:username, :password, :github_id])
+    |> cast(attrs, [:username, :password, :discord_id])
     |> validate_username()
     |> validate_password(opts)
   end

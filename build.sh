@@ -8,7 +8,7 @@ docker build . -t chessh/server
 
 cd front
 docker build \
- --build-arg REACT_APP_GITHUB_OAUTH=${REACT_APP_GITHUB_OAUTH} \
+ --build-arg REACT_APP_DISCORD_OAUTH=${REACT_APP_DISCORD_OAUTH} \
  --build-arg REACT_APP_SSH_SERVER=${REACT_APP_SSH_SERVER} \
  --build-arg REACT_APP_SSH_PORT=${REACT_APP_SSH_PORT} \
  . -t chessh/frontend 

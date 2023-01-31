@@ -17,8 +17,9 @@ config :chessh, RateLimits,
   create_game_rate: 2
 
 config :chessh, Web,
-  github_oauth_login_url: "https://github.com/login/oauth/access_token",
-  github_user_api_url: "https://api.github.com/user"
+  discord_oauth_login_url: "https://discord.com/api/oauth2/token",
+  discord_user_api_url: "https://discord.com/api/users/@me",
+  discord_scope: "identify"
 
 config :joken, default_signer: "secret"
 

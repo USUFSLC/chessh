@@ -20,6 +20,14 @@ export const Home = () => {
         <ol>
           <div>
             <li>
+              Consider joining the{" "}
+              <a href={process.env.REACT_APP_DISCORD_INVITE}>CheSSH Discord</a>{" "}
+              to receive notifications when other players are looking for
+              opponents, or when it is your move in a game.
+            </li>
+          </div>
+          <div>
+            <li>
               Add a <Link to="/keys">public key</Link>, or{" "}
               <Link to="/password">set a password</Link>.
             </li>
@@ -50,11 +58,14 @@ export const Home = () => {
             />
           </div>
           <div>
-            <li>Finally, play chess!</li>
-            <p>Ideally, keeping the following contols in mind:</p>
+            <li>
+              Finally, play chess! Ideally, keeping the following contols in
+              mind:
+            </li>
+
             <ul>
               <li>Ctrl + b / Escape to return to the main menu.</li>
-              <li>Ctrl + c / Ctrl + d to exit at any point.</li>
+              <li>Ctrl + c / Ctrl + d to exit CheSSH at any point.</li>
               <li>Arrow keys to move around the board.</li>
               <li>
                 Select a piece with "enter", and move it to a square by pressing

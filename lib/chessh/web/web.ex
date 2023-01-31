@@ -2,7 +2,6 @@ defmodule Chessh.Web.Endpoint do
   alias Chessh.{Player, Repo, Key, PlayerSession}
   alias Chessh.Web.Token
   use Plug.Router
-  require Logger
   import Ecto.Query
 
   plug(Plug.Logger)
@@ -17,27 +16,33 @@ defmodule Chessh.Web.Endpoint do
   plug(:dispatch)
 
   get "/oauth/redirect" do
-    [github_login_url, client_id, client_secret, github_user_api_url, github_user_agent] =
-      get_github_configs()
+    [
+      discord_login_url,
+      discord_scope,
+      client_id,
+      client_secret,
+      discord_user_api_url,
+      discord_user_agent,
+      redirect_uri
+    ] = get_discord_configs()
 
     resp =
       case conn.params do
         %{"code" => req_token} ->
           case :httpc.request(
                  :post,
-                 {String.to_charlist(
-                    "#{github_login_url}?client_id=#{client_id}&client_secret=#{client_secret}&code=#{req_token}"
-                  ), [], 'application/json', ''},
+                 {String.to_charlist(discord_login_url), [], 'application/x-www-form-urlencoded',
+                  'scope=#{discord_scope}&client_id=#{client_id}&client_secret=#{client_secret}&code=#{req_token}&grant_type=authorization_code&redirect_uri=#{redirect_uri}'},
                  [],
                  []
                ) do
             {:ok, {{_, 200, 'OK'}, _, resp}} ->
-              URI.decode_query(String.Chars.to_string(resp))
+              Jason.decode!(String.Chars.to_string(resp))
           end
       end
 
     {status, body} =
-      create_player_from_github_response(resp, github_user_api_url, github_user_agent)
+      create_player_from_discord_response(resp, discord_user_api_url, discord_user_agent)
 
     conn
     |> assign_jwt_and_redirect_or_encode(status, body)
@@ -200,14 +205,16 @@ defmodule Chessh.Web.Endpoint do
     end)
   end
 
-  defp get_github_configs() do
+  defp get_discord_configs() do
     Enum.map(
       [
-        :github_oauth_login_url,
-        :github_client_id,
-        :github_client_secret,
-        :github_user_api_url,
-        :github_user_agent
+        :discord_oauth_login_url,
+        :discord_scope,
+        :discord_client_id,
+        :discord_client_secret,
+        :discord_user_api_url,
+        :discord_user_agent,
+        :client_redirect_after_successful_sign_in
       ],
       fn key -> Application.get_env(:chessh, Web)[key] end
     )
@@ -246,27 +253,27 @@ defmodule Chessh.Web.Endpoint do
     end
   end
 
-  defp create_player_from_github_response(resp, github_user_api_url, github_user_agent) do
+  defp create_player_from_discord_response(resp, discord_user_api_url, discord_user_agent) do
     case resp do
       %{"access_token" => access_token} ->
         case :httpc.request(
                :get,
-               {String.to_charlist(github_user_api_url),
+               {String.to_charlist(discord_user_api_url),
                 [
                   {'Authorization', String.to_charlist("Bearer #{access_token}")},
-                  {'User-Agent', github_user_agent}
+                  {'User-Agent', discord_user_agent}
                 ]},
                [],
                []
              ) do
           {:ok, {{_, 200, 'OK'}, _, user_details}} ->
-            %{"login" => username, "id" => github_id} =
+            %{"username" => username, "id" => discord_id} =
               Jason.decode!(String.Chars.to_string(user_details))
 
             %Player{id: id} =
-              Repo.insert!(%Player{github_id: github_id, username: username},
-                on_conflict: [set: [github_id: github_id]],
-                conflict_target: :github_id
+              Repo.insert!(%Player{discord_id: discord_id, username: username},
+                on_conflict: [set: [discord_id: discord_id]],
+                conflict_target: :discord_id
               )
 
             {200,
@@ -283,7 +290,7 @@ defmodule Chessh.Web.Endpoint do
         end
 
       _ ->
-        {400, %{errors: "Failed to retrieve token from GitHub. Try again."}}
+        {400, %{errors: "Failed to retrieve token from Discord. Try again."}}
     end
   end
 end

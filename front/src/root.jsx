@@ -34,8 +34,11 @@ export const Root = () => {
               </>
             ) : (
               <>
-                <a href={process.env.REACT_APP_GITHUB_OAUTH} className="button">
-                  🐙 Login w/ GitHub 🐙
+                <a
+                  href={process.env.REACT_APP_DISCORD_OAUTH}
+                  className="button"
+                >
+                  👾 Login w/ Discord 👾
                 </a>
               </>
             )}
