@@ -18,6 +18,7 @@ defmodule Chessh.Application do
     children = [
       Chessh.Repo,
       Chessh.SSH.Daemon,
+      Chessh.DiscordNotifier,
       Plug.Cowboy.child_spec(
         scheme: :http,
         plug: Chessh.Web.Endpoint,

@@ -2,7 +2,7 @@ defmodule Chessh.Auth.PublicKeyAuthenticatorTest do
   use ExUnit.Case
   alias Chessh.{Key, Repo, Player}
 
-  @valid_user %{username: "lizzy", password: "password", discord_id: "2"}
+  @valid_user %{username: "lizzy#0003", password: "password", discord_id: "2"}
   @valid_key %{
     name: "The Gamer Machine",
     key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/2LOJGGEd/dhFgRxJ5MMv0jJw4s4pA8qmMbZyulN44"

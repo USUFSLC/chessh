@@ -14,14 +14,19 @@ config :chessh, RateLimits,
   player_session_message_burst_rate: 8,
   player_public_keys: 15,
   create_game_ms: 60 * 1000,
-  create_game_rate: 3
+  create_game_rate: 3,
+  discord_notification_rate: 3,
+  discord_notification_rate_ms: 1000
 
 config :chessh, Web,
   discord_oauth_login_url: "https://discord.com/api/oauth2/token",
   discord_user_api_url: "https://discord.com/api/users/@me",
   discord_scope: "identify"
 
-config :chessh, DiscordNotifications, looking_for_games_mention: "<@&1070084105796075550>"
+config :chessh, DiscordNotifications,
+  game_move_notif_delay_ms: 3 * 60 * 1000,
+  game_created_notif_delay_ms: 30 * 1000,
+  reschedule_delay: 5 * 1000
 
 config :joken, default_signer: "secret"
 

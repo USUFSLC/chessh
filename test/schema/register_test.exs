@@ -5,7 +5,8 @@ defmodule Chessh.Auth.UserRegistrationTest do
 
   @valid_user %{username: "lizzy#0003", password: "password", discord_id: "4"}
   @invalid_username %{username: "a", password: "password", discord_id: "7"}
-  @invalid_password %{username: "lizzy#0003", password: "pass", discord_id: "6"}
+  @invalid_password %{username: "bruh#0003", password: "pass", discord_id: "6"}
+  @repeated_username %{username: "lizzy#0003", password: "password", discord_id: "6"}
 
   test "Password must be at least 8 characters and username must be at least 2" do
     refute Player.registration_changeset(%Player{}, @invalid_password).valid?
