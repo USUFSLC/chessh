@@ -77,7 +77,7 @@ defmodule Chessh.SSH.Client.Game do
          ) do
       {:allow, _count} ->
         # Starting a new game
-        {:ok, %Game{} = game} =
+        {:ok, %Game{id: game_id} = game} =
           Game.changeset(
             %Game{},
             Map.merge(
@@ -91,6 +91,12 @@ defmodule Chessh.SSH.Client.Game do
             )
           )
           |> Repo.insert()
+
+        GenServer.cast(
+          :discord_notifier,
+          {:schedule_notification, {:game_created, game_id},
+           Application.get_env(:chessh, DiscordNotifications)[:game_created_notif_delay_ms]}
+        )
 
         init([
           %State{
@@ -402,6 +408,12 @@ defmodule Chessh.SSH.Client.Game do
           |> Repo.update()
 
         :syn.publish(:games, {:game, game_id}, {:new_move, attempted_move})
+
+        GenServer.cast(
+          :discord_notifier,
+          {:schedule_notification, {:move_reminder, game_id},
+           Application.get_env(:chessh, DiscordNotifications)[:game_move_notif_delay_ms]}
+        )
 
       _ ->
         nil

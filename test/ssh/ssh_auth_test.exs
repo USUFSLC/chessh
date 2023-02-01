@@ -5,7 +5,7 @@ defmodule Chessh.SSH.AuthTest do
   @localhost '127.0.0.1'
   @localhost_inet {{127, 0, 0, 1}, 1}
   @key_name "The Gamer Machine"
-  @valid_user %{username: "logan", password: "password", discord_id: "3"}
+  @valid_user %{username: "lizzy#0003", password: "password", discord_id: "3"}
   @client_test_keys_dir Path.join(Application.compile_env!(:chessh, :key_dir), "client_keys")
   @client_pub_key 'id_ed25519.pub'
 
