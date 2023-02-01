@@ -23,9 +23,6 @@ config :libcluster,
           |> Enum.filter(fn x -> String.length(x) > 0 end)
           |> Enum.map(&String.to_atom/1)
       ],
-      connect: {:net_kernel, :connect, []},
-      disconnect: {:net_kernel, :disconnect, []},
-      list_nodes: {:erlang, :nodes, [:connected]},
       child_spec: [restart: :transient]
     ]
   ]
