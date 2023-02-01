@@ -14,7 +14,7 @@ config :chessh, RateLimits,
   player_session_message_burst_rate: 8,
   player_public_keys: 15,
   create_game_ms: 60 * 1000,
-  create_game_rate: 2
+  create_game_rate: 3
 
 config :chessh, Web,
   discord_oauth_login_url: "https://discord.com/api/oauth2/token",
