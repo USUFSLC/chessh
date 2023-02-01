@@ -85,7 +85,7 @@ listen ssh
 	balance	leastconn
 	mode	tcp
 
-$(echo "${server_node_ids[@]}" | python3 -c "print(\"\\n\".join([f\"  server pi{i} 192.168.100.{i}:${ssh_port} check inter 10s fall rise 1 \" for i in input().split()]))")
+$(echo "${server_node_ids[@]}" | python3 -c "print(\"\\n\".join([f\"\\tserver pi{i} 192.168.100.{i}:${ssh_port} check inter 30s fall 5 rise 1 \" for i in input().split()]))")
 "
 
 ssh_opts="-oStrictHostKeyChecking=no"
@@ -124,7 +124,7 @@ function reload_loadbalancer_conf() {
     
     sudo systemctl restart nginx
 
-    printf '$ha_proxy_cfg' | sudo tee $ha_proxy_cfg_file
+    printf "$ha_proxy_cfg" | sudo tee $ha_proxy_cfg_file
 
     sudo systemctl restart haproxy
 }
@@ -147,7 +147,7 @@ function build_frontend_nodes() {
 
 function build_server() {
     node_id=$1
-	  node_conn=$(make_pi_node_conn_str $node_id)
+    node_conn=$(make_pi_node_conn_str $node_id)
     temp_file=$(mktemp)
     
     cp "${build_dir}/.env" $temp_file
@@ -167,7 +167,7 @@ function build_server() {
 
 function build_server_nodes() {
     copy_ssh_keys
-    "$(printf "'192.168.100.%s'\n" ${server_node_ids[@]})" > $erlang_hosts_file
+    printf "'192.168.100.%s'\n" ${server_node_ids[@]} > $erlang_hosts_file
     
     for node_id in "${server_node_ids[@]}"
     do
@@ -177,4 +177,4 @@ function build_server_nodes() {
 
 reload_loadbalancer_conf
 build_server_nodes
-build_frontend_nodes
+#build_frontend_nodes
