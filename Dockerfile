@@ -75,11 +75,4 @@ COPY --from=builder --chown=nobody:root /app/priv /app/priv
 
 USER nobody
 
-# EPMD (elixir cluster)
-EXPOSE 4369
-# API
-EXPOSE 8080
-# CheSSH!
-EXPOSE 34355
-
 CMD /app/bin/chessh eval "Chessh.Release.migrate" && /app/bin/chessh start
