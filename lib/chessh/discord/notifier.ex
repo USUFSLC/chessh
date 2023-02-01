@@ -65,12 +65,13 @@ defmodule Chessh.DiscordNotifier do
           light_player: %Player{discord_id: light_player_discord_id},
           turn: turn,
           updated_at: last_updated,
-          moves: move_count
+          moves: move_count,
+          status: status
         } = Repo.preload(game, [:dark_player, :light_player])
 
         delta_t = NaiveDateTime.diff(NaiveDateTime.utc_now(), last_updated, :millisecond)
 
-        if delta_t >= min_delta_t do
+        if delta_t >= min_delta_t && status == :continue do
           post_discord(
             discord_game_move_notif_webhook,
             "<@#{if turn == :light, do: light_player_discord_id, else: dark_player_discord_id}> it is your move in Game #{game_id} (move #{move_count})."
