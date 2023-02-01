@@ -32,7 +32,7 @@ defmodule Chessh.Web.Endpoint do
           case :httpc.request(
                  :post,
                  {String.to_charlist(discord_login_url), [], 'application/x-www-form-urlencoded',
-                  'scope=#{discord_scope}&client_id=#{client_id}&client_secret=#{client_secret}&code=#{req_token}&grant_type=authorization_code&redirect_uri=http://127.0.0.1:3000/api/oauth/redirect'},
+                  'scope=#{discord_scope}&client_id=#{client_id}&client_secret=#{client_secret}&code=#{req_token}&grant_type=authorization_code&redirect_uri=#{redirect_uri}'},
                  [],
                  []
                ) do
