@@ -10,3 +10,11 @@ config :chessh, RateLimits,
   max_concurrent_user_sessions: 5,
   player_session_message_burst_ms: 750,
   player_session_message_burst_rate: 8
+
+config :libcluster,
+  topologies: [
+    erlang_hosts_example: [
+      strategy: Elixir.Cluster.Strategy.ErlangHosts,
+      config: [timeout: 30_000]
+    ]
+  ]

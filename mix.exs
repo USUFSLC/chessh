@@ -37,7 +37,8 @@ defmodule Chessh.MixProject do
       {:syn, "~> 3.3"},
       {:jason, "~> 1.3"},
       {:plug_cowboy, "~> 2.2"},
-      {:joken, "~> 2.5"}
+      {:joken, "~> 2.5"},
+      {:libcluster, "~> 3.3"}
     ]
   end
 

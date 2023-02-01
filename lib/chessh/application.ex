@@ -22,7 +22,9 @@ defmodule Chessh.Application do
         scheme: :http,
         plug: Chessh.Web.Endpoint,
         options: [port: Application.get_env(:chessh, Web)[:port]]
-      )
+      ),
+      {Cluster.Supervisor,
+       [Application.get_env(:libcluster, :topologies), [name: Chessh.ClusterSupervisor]]}
     ]
 
     opts = [strategy: :one_for_one, name: Chessh.Supervisor]

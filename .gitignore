@@ -27,3 +27,5 @@ server-*.tar
 
 .env
 .env.prod
+
+.hosts.erlang

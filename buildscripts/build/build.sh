@@ -10,8 +10,9 @@ server_node_ids=(4 5 6)
 build_dir="${HOME}/src/chessh/buildscripts/build"
 
 server_name="chessh.linux.usu.edu"
+erlang_hosts_file="${build_dir}/.hosts.erlang"
 load_balancer_nginx_site_file="/etc/nginx/sites-enabled/${server_name}.conf"
-ha_proxy_cfg="/etc/haproxy/haproxy.cfg"
+ha_proxy_cfg_file="/etc/haproxy/haproxy.cfg"
 ssl_cert_path="/etc/letsencrypt/live/${server_name}"
 certbot_webroot_path="/var/www/html/${server_name}"
 load_balancer_nginx_site="
@@ -63,34 +64,29 @@ server {
 	return 404;
 }
 "
-# TODO: Servers should pull server ids from array
-ha_proxy_cfg="
-global\n
-	log /dev/log 	local0\n
-	log /dev/log	local1 notice\n
-	maxconn 2500\n
-	user haproxy\n
-	group haproxy\n
-	daemon\n
-\n
-defaults\n
-	log 	global\n
-	mode	tcp\n
-	timeout connect 10s\n
-	timeout client 36h\n
-	timeout server 36h\n
-	option 	dontlognull\n
-\n
-listen ssh\n
-	bind 	*:${ssh_port}\n
-	balance	leastconn\n
-	mode	tcp\n
 
-	server hostA  192.168.100.4:${ssh_port} check inter 10s fall 2 rise 1\n
-	server hostB  192.168.100.5:${ssh_port} check inter 10s fall 2 rise 1\n
-	server hostC  192.168.100.6:${ssh_port} check inter 10s fall 2 rise 1\n
+ha_proxy_cfg="
+global
+	log /dev/log 	local0
+	log /dev/log	local1 notice
+	maxconn 2500
+	user haproxy
+	group haproxy
+	daemon
+defaults
+	log 	global
+	mode	tcp
+	timeout connect 10s
+	timeout client 36h
+	timeout server 36h
+	option 	dontlognull
+listen ssh
+	bind 	0.0.0.0:${ssh_port}
+	balance	leastconn
+	mode	tcp
+
+$(echo "${server_node_ids[@]}" | python3 -c "print(\"\\n\".join([f\"  server pi{i} 192.168.100.{i}:${ssh_port} check inter 10s fall rise 1 \" for i in input().split()]))")
 "
-echo $ha_proxy_cfg
 
 ssh_opts="-oStrictHostKeyChecking=no"
 
@@ -116,9 +112,8 @@ function copy_ssh_keys() {
     done
 }
 
-
-function reload_nginx_confs() {
-    dead_files=("/etc/nginx/sites-enabled/default" "/etc/nginx/nginx.conf" "$load_balancer_nginx_site_file")
+function reload_loadbalancer_conf() {
+    dead_files=("/etc/nginx/sites-enabled/default" "/etc/nginx/nginx.conf" "$load_balancer_nginx_site_file" "$ha_proxy_cfg_file")
     for file in "${dead_files[@]}"
     do
         [ -e $file ] && sudo rm $file
@@ -128,6 +123,10 @@ function reload_nginx_confs() {
     echo $load_balancer_nginx_site | sudo tee $load_balancer_nginx_site_file
     
     sudo systemctl restart nginx
+
+    printf '$ha_proxy_cfg' | sudo tee $ha_proxy_cfg_file
+
+    sudo systemctl restart haproxy
 }
 
 function build_frontend() {
@@ -152,7 +151,7 @@ function build_server() {
     temp_file=$(mktemp)
     
     cp "${build_dir}/.env" $temp_file
-    printf "\nNODE_ID=$node_id\n" >> $temp_file
+    printf "\nNODE_ID=$node_conn\nRELEASE_NODE=chessh@192.168.100.${node_id}\n" >> $temp_file
     scp $ssh_opts $temp_file $node_conn:~/.env
 
     cp "${build_dir}/chessh.service" $temp_file
@@ -161,11 +160,14 @@ function build_server() {
     
     scp $ssh_opts "${build_dir}/build_server.sh" $node_conn:~/
 
+    scp $ssh_opts $erlang_hosts_file $node_conn:~/
+
     ssh $ssh_opts $node_conn "~/build_server.sh"
 }
 
 function build_server_nodes() {
     copy_ssh_keys
+    "$(printf "'192.168.100.%s'\n" ${server_node_ids[@]})" > $erlang_hosts_file
     
     for node_id in "${server_node_ids[@]}"
     do
@@ -173,6 +175,6 @@ function build_server_nodes() {
     done
 }
 
-reload_nginx_confs
+reload_loadbalancer_conf
 build_server_nodes
 build_frontend_nodes
