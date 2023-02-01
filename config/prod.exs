@@ -20,7 +20,7 @@ config :libcluster,
         if_addr: "0.0.0.0",
         multicast_if: "192.168.1.1",
         multicast_addr: "233.252.255.255",
-        multicast_ttl: 1,
+        multicast_ttl: 1
       ]
     ]
   ]

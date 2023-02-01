@@ -23,12 +23,4 @@ config :chessh, Web,
 
 config :joken, default_signer: "secret"
 
-config :libcluster,
-  topologies: [
-    erlang_hosts_example: [
-      strategy: Elixir.Cluster.Strategy.ErlangHosts,
-      config: [timeout: 30_000]
-    ]
-  ]
-
 import_config "#{config_env()}.exs"
