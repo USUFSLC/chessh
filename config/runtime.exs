@@ -3,6 +3,11 @@ import Config
 config :chessh,
   ssh_port: String.to_integer(System.get_env("SSH_PORT", "34355"))
 
+config :chessh, DiscordNotifications,
+  looking_for_games_role_mention: "<@&#{System.get_env("NEW_GAME_PINGABLE_ROLE_ID")}>",
+  discord_game_move_notif_webhook: System.get_env("REMIND_MOVE_CHANNEL_WEBHOOK"),
+  discord_new_game_notif_webhook: System.get_env("NEW_GAME_CHANNEL_WEBHOOK")
+
 config :chessh, Web,
   discord_client_id: System.get_env("DISCORD_CLIENT_ID"),
   discord_client_secret: System.get_env("DISCORD_CLIENT_SECRET"),
