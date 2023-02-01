@@ -21,6 +21,8 @@ config :chessh, Web,
   discord_user_api_url: "https://discord.com/api/users/@me",
   discord_scope: "identify"
 
+config :chessh, DiscordNotifications, looking_for_games_mention: "<@&1070084105796075550>"
+
 config :joken, default_signer: "secret"
 
 import_config "#{config_env()}.exs"
