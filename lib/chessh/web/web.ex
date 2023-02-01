@@ -267,11 +267,12 @@ defmodule Chessh.Web.Endpoint do
                []
              ) do
           {:ok, {{_, 200, 'OK'}, _, user_details}} ->
-            %{"username" => username, "id" => discord_id} =
+            %{"username" => username, "discriminator" => discriminator, "id" => discord_id} =
               Jason.decode!(String.Chars.to_string(user_details))
 
             %Player{id: id} =
-              Repo.insert!(%Player{discord_id: discord_id, username: username},
+              Repo.insert!(
+                %Player{discord_id: discord_id, username: username <> "#" <> discriminator},
                 on_conflict: [set: [discord_id: discord_id]],
                 conflict_target: :discord_id
               )
