@@ -151,6 +151,7 @@ function build_server() {
     
     cp "${build_dir}/.env" $temp_file
     printf "\nNODE_ID=$node_conn\nRELEASE_NODE=chessh@192.168.100.${node_id}\nRELEASE_DISTRIBUTION=name\nRELEASE_COOKIE=chessh\n" >> $temp_file
+    printf "CLUSTER_NODES=$(printf "chessh@192.168.100.%s," ${server_node_ids[@]})\n" >> $temp_file
     scp $ssh_opts $temp_file $node_conn:~/.env
 
     cp "${build_dir}/chessh.service" $temp_file

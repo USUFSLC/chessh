@@ -13,6 +13,23 @@ config :chessh, Web,
     System.get_env("SERVER_REDIRECT_URI", "http://127.0.0.1:3000/api/oauth/redirect"),
   port: String.to_integer(System.get_env("WEB_PORT", "8080"))
 
+config :libcluster,
+  topologies: [
+    chessh: [
+      strategy: Cluster.Strategy.Epmd,
+      config: [
+        hosts:
+          String.split(System.get_env("CLUSTER_NODES", ""), ",")
+          |> Enum.filter(fn x -> String.length(x) > 0 end)
+          |> Enum.map(&String.to_atom/1)
+      ],
+      connect: {:net_kernel, :connect, []},
+      disconnect: {:net_kernel, :disconnect, []},
+      list_nodes: {:erlang, :nodes, [:connected]},
+      child_spec: [restart: :transient]
+    ]
+  ]
+
 config :joken,
   default_signer: System.get_env("JWT_SECRET")
 

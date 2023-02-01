@@ -18,14 +18,6 @@ config :hammer,
     redis: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
   ]
 
-config :libcluster,
-  topologies: [
-    chessh_test: [
-      strategy: Elixir.Cluster.Strategy.Epmd
-    ]
-  ]
-
-
 config :chessh,
   ssh_port: 42_069,
   key_dir: Path.join(Path.dirname(__DIR__), "priv/test_keys")
