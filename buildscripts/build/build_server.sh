@@ -36,5 +36,6 @@ sudo docker build . -t chessh/server
 cd $HOME
 sudo mv chessh.service /etc/systemd/system/chessh.service
 sudo systemctl daemon-reload
-sudo systemctl enable --now chessh
-sudo systemctl restart chessh
+sudo systemctl enable chessh
+sudo systemctl stop chessh
+sudo systemctl start chessh
