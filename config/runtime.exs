@@ -8,7 +8,9 @@ config :chessh, Web,
   discord_client_secret: System.get_env("DISCORD_CLIENT_SECRET"),
   discord_user_agent: System.get_env("DISCORD_USER_AGENT"),
   client_redirect_after_successful_sign_in:
-    System.get_env("CLIENT_REDIRECT_AFTER_OAUTH", "http://127.0.0.1:3000/oauth-successfule"),
+    System.get_env("CLIENT_REDIRECT_AFTER_OAUTH", "http://127.0.0.1:3000/auth-successful"),
+  server_redirect_uri:
+    System.get_env("SERVER_REDIRECT_URI", "http://127.0.0.1:3000/api/oauth/redirect"),
   port: String.to_integer(System.get_env("WEB_PORT", "8080"))
 
 config :joken,
