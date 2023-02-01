@@ -3,10 +3,9 @@ defmodule Chessh.Auth.UserRegistrationTest do
   use ExUnit.Case
   alias Chessh.{Player, Repo}
 
-  @valid_user %{username: "logan", password: "password", discord_id: "4"}
+  @valid_user %{username: "lizzy#0003", password: "password", discord_id: "4"}
   @invalid_username %{username: "a", password: "password", discord_id: "7"}
-  @invalid_password %{username: "aasdf", password: "pass", discord_id: "6"}
-  @repeated_username %{username: "LoGan", password: "password", discord_id: "5"}
+  @invalid_password %{username: "lizzy#0003", password: "pass", discord_id: "6"}
 
   test "Password must be at least 8 characters and username must be at least 2" do
     refute Player.registration_changeset(%Player{}, @invalid_password).valid?
@@ -40,7 +39,7 @@ defmodule Chessh.Auth.UserRegistrationTest do
     refute changeset.changes.hashed_password == @valid_user.password
   end
 
-  test "Username is uniquely case insensitive" do
+  test "Username is uniquely case sensitive" do
     assert Repo.insert(Player.registration_changeset(%Player{}, @valid_user))
 
     assert {:error,

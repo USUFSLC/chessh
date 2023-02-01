@@ -2,7 +2,7 @@ defmodule Chessh.Auth.PasswordAuthenticatorTest do
   use ExUnit.Case
   alias Chessh.{Player, Repo}
 
-  @valid_user %{username: "logan", password: "password", discord_id: "1"}
+  @valid_user %{username: "lizzy", password: "password", discord_id: "1"}
 
   setup_all do
     Ecto.Adapters.SQL.Sandbox.checkout(Repo)
@@ -26,7 +26,7 @@ defmodule Chessh.Auth.PasswordAuthenticatorTest do
   end
 
   test "Password can authenticate a user instance" do
-    player = Repo.get_by(Player, username: "logan")
+    player = Repo.get_by(Player, username: "lizzy")
 
     assert Chessh.Auth.PasswordAuthenticator.authenticate(
              player,

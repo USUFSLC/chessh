@@ -4,17 +4,17 @@ defmodule Chessh.Schema.KeyTest do
   alias Chessh.Key
 
   @valid_attrs %{
-    name: "Logan's Key",
+    name: "Lizzy's Key",
     key:
       {{{:ECPoint,
          <<159, 246, 44, 226, 70, 24, 71, 127, 118, 17, 96, 71, 18, 121, 48, 203, 244, 140, 156,
            56, 179, 138, 64, 242, 169, 140, 109, 156, 174, 148, 222, 56>>},
-        {:namedCurve, {1, 3, 101, 112}}}, [comment: 'logan@yagami']}
+        {:namedCurve, {1, 3, 101, 112}}}, [comment: 'lizzy@yagami']}
   }
   @valid_key_attrs %{
     name: "asdf key",
     key:
-      "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBC7Mpf2QIL32MmKxcrXAoZM3l7/hBy+8d+WqTRMun+tC/XYNiXSIDuZv01an3D1d22fmSpZiprFQzjB4yEz23qw= logan@yagami"
+      "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBC7Mpf2QIL32MmKxcrXAoZM3l7/hBy+8d+WqTRMun+tC/XYNiXSIDuZv01an3D1d22fmSpZiprFQzjB4yEz23qw= lizzy@yagami"
   }
   @invalid_key_attrs %{
     name: "An Invalid Key",
