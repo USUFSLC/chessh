@@ -7,9 +7,8 @@ ssh_port=34355
 frontend_node_ids=(2)
 server_node_ids=(4 5 6)
 
-build_dir="${HOME}/build"
+build_dir="${HOME}/src/chessh/buildscripts/build"
 
-#server_name="usufslc-pi-cluster.bluezone.usu.edu"
 server_name="chessh.linux.usu.edu"
 load_balancer_nginx_site_file="/etc/nginx/sites-enabled/${server_name}.conf"
 ha_proxy_cfg="/etc/haproxy/haproxy.cfg"
