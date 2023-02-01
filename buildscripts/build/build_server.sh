@@ -30,7 +30,6 @@ fi
 # Build
 cd $chessh_path
 [ -d "$chessh_path/priv/keys" ] && cp ~/keys/* "$chessh_path/priv/keys/" || cp -r ~/keys "$chessh_path/priv"
-mv $HOME/.hosts.erlang .
 sudo docker build . -t chessh/server
 
 # Systemd service

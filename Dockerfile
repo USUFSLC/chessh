@@ -62,10 +62,6 @@ ENV LC_ALL en_US.UTF-8
 WORKDIR "/app"
 RUN chown nobody /app
 
-# set OTP_ROOT so elixir can find nodes
-ENV OTP_ROOT=/app
-COPY .hosts.erlang /app/.hosts.erlang
-
 # set runner ENV
 ENV MIX_ENV="prod"
 

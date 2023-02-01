@@ -10,7 +10,6 @@ server_node_ids=(4 5 6)
 build_dir="${HOME}/src/chessh/buildscripts/build"
 
 server_name="chessh.linux.usu.edu"
-erlang_hosts_file="${build_dir}/.hosts.erlang"
 load_balancer_nginx_site_file="/etc/nginx/sites-enabled/${server_name}.conf"
 ha_proxy_cfg_file="/etc/haproxy/haproxy.cfg"
 ssl_cert_path="/etc/letsencrypt/live/${server_name}"
@@ -160,15 +159,11 @@ function build_server() {
     
     scp $ssh_opts "${build_dir}/build_server.sh" $node_conn:~/
 
-    scp $ssh_opts $erlang_hosts_file $node_conn:~/
-
     ssh $ssh_opts $node_conn "~/build_server.sh"
 }
 
 function build_server_nodes() {
     copy_ssh_keys
-    printf "'192.168.100.%s'\n" ${server_node_ids[@]} > $erlang_hosts_file
-    
     for node_id in "${server_node_ids[@]}"
     do
         build_server $node_id
