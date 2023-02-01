@@ -270,19 +270,22 @@ defmodule Chessh.Web.Endpoint do
             %{"username" => username, "discriminator" => discriminator, "id" => discord_id} =
               Jason.decode!(String.Chars.to_string(user_details))
 
-            %Player{id: id} =
-              Repo.insert!(
-                %Player{discord_id: discord_id, username: username <> "#" <> discriminator},
-                on_conflict: [set: [discord_id: discord_id]],
-                conflict_target: :discord_id
-              )
+            case Repo.get_by(Player, discord_id: discord_id) do
+              nil -> %Player{discord_id: discord_id}
+              player -> player
+            end
+            |> Player.discord_changeset(%{
+              username: username <> "#" <> discriminator,
+              discord_id: discord_id
+            })
+            |> Repo.insert_or_update()
 
             {200,
              %{
                success: true,
                jwt:
                  Token.generate_and_sign!(%{
-                   "uid" => id
+                   "uid" => Repo.get_by(Player, discord_id: discord_id).id
                  })
              }}
 
