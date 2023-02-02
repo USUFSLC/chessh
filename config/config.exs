@@ -24,8 +24,8 @@ config :chessh, Web,
   discord_scope: "identify"
 
 config :chessh, DiscordNotifications,
-  game_move_notif_delay_ms: 3 * 60 * 1000,
-  game_created_notif_delay_ms: 30 * 1000,
+  game_move_notif_delay_ms: 10 * 1000,
+  game_created_notif_delay_ms: 10 * 1000,
   reschedule_delay: 5 * 1000
 
 config :joken, default_signer: "secret"
