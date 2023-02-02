@@ -140,9 +140,6 @@ defmodule Chessh.DiscordNotifier do
         if message do
           post_discord(new_game_channel_id, message)
         end
-
-      nil ->
-        nil
     end
   end
 
