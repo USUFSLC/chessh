@@ -5,8 +5,9 @@ config :chessh,
 
 config :chessh, DiscordNotifications,
   looking_for_games_role_mention: "<@&#{System.get_env("NEW_GAME_PINGABLE_ROLE_ID")}>",
-  discord_game_move_notif_webhook: System.get_env("REMIND_MOVE_CHANNEL_WEBHOOK"),
-  discord_new_game_notif_webhook: System.get_env("NEW_GAME_CHANNEL_WEBHOOK")
+  remind_move_channel_id: System.get_env("REMIND_MOVE_CHANNEL_ID"),
+  discord_bot_token: System.get_env("DISCORD_BOT_TOKEN"),
+  new_game_channel_id: System.get_env("NEW_GAME_CHANNEL_ID")
 
 config :chessh, Web,
   discord_client_id: System.get_env("DISCORD_CLIENT_ID"),

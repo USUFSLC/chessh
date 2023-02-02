@@ -15,7 +15,7 @@ config :chessh, RateLimits,
   player_public_keys: 15,
   create_game_ms: 60 * 1000,
   create_game_rate: 3,
-  discord_notification_rate: 3,
+  discord_notification_rate: 30,
   discord_notification_rate_ms: 1000
 
 config :chessh, Web,
@@ -24,8 +24,8 @@ config :chessh, Web,
   discord_scope: "identify"
 
 config :chessh, DiscordNotifications,
-  game_move_notif_delay_ms: 3 * 60 * 1000,
-  game_created_notif_delay_ms: 30 * 1000,
+  game_move_notif_delay_ms: 10 * 1000,
+  game_created_notif_delay_ms: 10 * 1000,
   reschedule_delay: 5 * 1000
 
 config :joken, default_signer: "secret"

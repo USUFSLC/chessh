@@ -396,7 +396,7 @@ defmodule Chessh.SSH.Client.Game do
       {:ok, status} ->
         {:ok, fen} = :binbo.get_fen(binbo_pid)
 
-        {:ok, _new_game} =
+        {:ok, %Game{status: after_move_status}} =
           game
           |> Game.changeset(
             Map.merge(
@@ -413,11 +413,18 @@ defmodule Chessh.SSH.Client.Game do
 
         :syn.publish(:games, {:game, game_id}, {:new_move, attempted_move})
 
-        GenServer.cast(
-          :discord_notifier,
-          {:schedule_notification, {:move_reminder, game_id},
-           Application.get_env(:chessh, DiscordNotifications)[:game_move_notif_delay_ms]}
-        )
+        if after_move_status == :continue do
+          GenServer.cast(
+            :discord_notifier,
+            {:schedule_notification, {:move_reminder, game_id},
+             Application.get_env(:chessh, DiscordNotifications)[:game_move_notif_delay_ms]}
+          )
+        else
+          GenServer.cast(
+            :discord_notifier,
+            {:schedule_notification, {:cleanup_thread, game_id}, 0}
+          )
+        end
 
       _ ->
         nil
