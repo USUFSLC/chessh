@@ -262,22 +262,21 @@ defmodule Chessh.SSH.Client.Game do
         do: Renderer.flip({new_cursor.y, new_cursor.x}),
         else: {new_cursor.y, new_cursor.x}
 
-    piece_type =
-      :binbo_position.get_piece(
-        :binbo_board.notation_to_index(Renderer.to_chess_coord(maybe_flipped_cursor_tup)),
-        :binbo.game_state(binbo_pid)
-      )
-
     {new_move_from, move_to} =
       if action == :return do
         coords = {new_cursor.y, new_cursor.x}
 
         case move_from do
           nil ->
-            if piece_type != 0 do
-              {coords, nil}
-            else
+            if :binbo_position.get_piece(
+                 :binbo_board.notation_to_index(
+                   Renderer.to_chess_coord(maybe_flipped_cursor_tup)
+                 ),
+                 :binbo.game_state(binbo_pid)
+               ) == 0 do
               {move_from, nil}
+            else
+              {coords, nil}
             end
 
           _ ->
@@ -307,10 +306,15 @@ defmodule Chessh.SSH.Client.Game do
       })
 
     if move_from && move_to do
-      maybe_flipped_to = if flipped, do: Renderer.flip(move_to), else: move_to
+      [maybe_flipped_to, maybe_flipped_from] =
+        [move_to, move_from]
+        |> Enum.map(fn coord -> if flipped, do: Renderer.flip(coord), else: coord end)
 
       promotion_possible =
-        case piece_type do
+        case :binbo_position.get_piece(
+               :binbo_board.notation_to_index(Renderer.to_chess_coord(maybe_flipped_from)),
+               :binbo.game_state(binbo_pid)
+             ) do
           1 ->
             # Light pawn
             {y, _} = maybe_flipped_to

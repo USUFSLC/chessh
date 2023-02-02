@@ -55,28 +55,26 @@ defmodule Chessh.DiscordNotifier do
       |> Keyword.take([:game_move_notif_delay_ms, :discord_game_move_notif_webhook])
       |> Keyword.values()
 
-    case Repo.get(Game, game_id) do
-      nil ->
-        nil
-
-      game ->
-        %Game{
-          dark_player: %Player{discord_id: dark_player_discord_id},
-          light_player: %Player{discord_id: light_player_discord_id},
-          turn: turn,
-          updated_at: last_updated,
-          moves: move_count,
-          status: status
-        } = Repo.preload(game, [:dark_player, :light_player])
-
+    case Repo.get(Game, game_id) |> Repo.preload([:dark_player, :light_player]) do
+      %Game{
+        dark_player: %Player{discord_id: dark_player_discord_id},
+        light_player: %Player{discord_id: light_player_discord_id},
+        turn: turn,
+        updated_at: last_updated,
+        moves: move_count,
+        status: :continue
+      } ->
         delta_t = NaiveDateTime.diff(NaiveDateTime.utc_now(), last_updated, :millisecond)
 
-        if delta_t >= min_delta_t && status == :continue do
+        if delta_t >= min_delta_t do
           post_discord(
             discord_game_move_notif_webhook,
             "<@#{if turn == :light, do: light_player_discord_id, else: dark_player_discord_id}> it is your move in Game #{game_id} (move #{move_count})."
           )
         end
+
+      _ ->
+        nil
     end
   end
 
@@ -99,10 +97,10 @@ defmodule Chessh.DiscordNotifier do
         message =
           case {is_nil(light_player), is_nil(dark_player)} do
             {true, false} ->
-              "#{pingable_mention}, <@#{dark_player.discord_id}> is looking for an opponent to play as light in Game #{game_id}"
+              "#{pingable_mention}, <@#{dark_player.discord_id}> is looking for an opponent to play with light pieces in Game #{game_id}"
 
             {false, true} ->
-              "#{pingable_mention}, <@#{light_player.discord_id}> is looking for an opponent to play as dark in Game #{game_id}"
+              "#{pingable_mention}, <@#{light_player.discord_id}> is looking for an opponent to play with dark pieces in Game #{game_id}"
 
             _ ->
               false
