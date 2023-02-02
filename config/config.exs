@@ -15,7 +15,7 @@ config :chessh, RateLimits,
   player_public_keys: 15,
   create_game_ms: 60 * 1000,
   create_game_rate: 3,
-  discord_notification_rate: 3,
+  discord_notification_rate: 30,
   discord_notification_rate_ms: 1000
 
 config :chessh, Web,

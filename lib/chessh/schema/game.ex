@@ -15,6 +15,8 @@ defmodule Chessh.Game do
     belongs_to(:light_player, Player, foreign_key: :light_player_id)
     belongs_to(:dark_player, Player, foreign_key: :dark_player_id)
 
+    field(:discord_thread_id, :string)
+
     timestamps()
   end
 
@@ -28,7 +30,8 @@ defmodule Chessh.Game do
       :status,
       :last_move,
       :light_player_id,
-      :dark_player_id
+      :dark_player_id,
+      :discord_thread_id
     ])
   end
 end
