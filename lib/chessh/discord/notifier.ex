@@ -165,6 +165,11 @@ defmodule Chessh.DiscordNotifier do
           make_discord_api_call(:put, 'channels/#{thread_id}/thread-members/#{id}')
         end)
 
+        post_discord(
+          thread_id,
+          "This private thread is used to communicate move notifications. It will be destroyed on game end."
+        )
+
         thread_id
 
       _ ->

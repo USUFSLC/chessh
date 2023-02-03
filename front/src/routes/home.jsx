@@ -10,7 +10,7 @@ export const Home = () => {
     const sshConfig = `Host chessh
   Hostname ${process.env.REACT_APP_SSH_SERVER}
   Port ${process.env.REACT_APP_SSH_PORT}
-  User ${player?.username}
+  User "${player?.username}"
   PubkeyAuthentication yes`;
     return (
       <>
