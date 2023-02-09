@@ -12,6 +12,7 @@ defmodule Chessh.SSH.Client.Game.Renderer do
   @previous_move_background ANSI.light_magenta_background()
   @from_select_background ANSI.light_green_background()
   @to_select_background ANSI.light_yellow_background()
+  @in_check_color ANSI.yellow_background()
 
   @dark_piece_color ANSI.red()
   @light_piece_color ANSI.light_cyan()
@@ -21,6 +22,7 @@ defmodule Chessh.SSH.Client.Game.Renderer do
   def to_select_background(), do: @to_select_background
   def from_select_background(), do: @from_select_background
   def previous_move_background(), do: @previous_move_background
+  def in_check_color(), do: @in_check_color
 
   def to_chess_coord({y, x})
       when x >= 0 and x < @chess_board_width and y >= 0 and y < @chess_board_height do

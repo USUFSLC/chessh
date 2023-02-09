@@ -5,6 +5,8 @@ defmodule Chessh.DiscordNotifier do
 
   alias Chessh.{Game, Player, Repo}
 
+  require Logger
+
   def start_link(state \\ []) do
     GenServer.start_link(__MODULE__, state, name: @name)
   end
@@ -60,6 +62,7 @@ defmodule Chessh.DiscordNotifier do
         dark_player: %Player{discord_id: dark_player_discord_id},
         light_player: %Player{discord_id: light_player_discord_id},
         turn: turn,
+        last_move: last_move,
         updated_at: last_updated,
         moves: move_count,
         status: :continue,
@@ -83,7 +86,10 @@ defmodule Chessh.DiscordNotifier do
         if delta_t >= min_delta_t do
           post_discord(
             game.discord_thread_id,
-            "<@#{if turn == :light, do: light_player_discord_id, else: dark_player_discord_id}> it is your move in Game #{game_id} (move #{move_count})."
+            %{
+              content:
+                "<@#{if turn == :light, do: light_player_discord_id, else: dark_player_discord_id}> it is your move in Game #{game_id} (move #{move_count}): your opponent played #{last_move}."
+            }
           )
         end
 
@@ -138,7 +144,7 @@ defmodule Chessh.DiscordNotifier do
           end
 
         if message do
-          post_discord(new_game_channel_id, message)
+          post_discord(new_game_channel_id, %{content: message})
         end
     end
   end
@@ -167,7 +173,10 @@ defmodule Chessh.DiscordNotifier do
 
         post_discord(
           thread_id,
-          "This private thread is used to communicate move notifications. It will be destroyed on game end."
+          %{
+            content:
+              "This private thread is used to communicate move notifications. It will be destroyed on game end."
+          }
         )
 
         thread_id
@@ -177,8 +186,8 @@ defmodule Chessh.DiscordNotifier do
     end
   end
 
-  defp post_discord(channel_id, message) do
-    make_discord_api_call(:post, "channels/#{channel_id}/messages", %{content: message})
+  defp post_discord(channel_id, body) do
+    make_discord_api_call(:post, "channels/#{channel_id}/messages", body)
   end
 
   defp destroy_channel(channel_id) do

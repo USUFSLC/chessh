@@ -455,7 +455,8 @@ defmodule Chessh.SSH.Client.Game do
 
   defp make_highlight_map(
          %State{
-           game: %Game{last_move: last_move},
+           game: %Game{last_move: last_move, turn: turn},
+           binbo_pid: binbo_pid,
            flipped: flipped
          },
          extra_highlights \\ %{}
@@ -465,10 +466,33 @@ defmodule Chessh.SSH.Client.Game do
         [String.slice(last_move, 0..1), String.slice(last_move, 2..4)]
         |> Enum.map(fn coord -> Renderer.from_chess_coord(coord, flipped) end)
 
-      %{
-        prev_move_from => Renderer.previous_move_background(),
-        prev_move_to => Renderer.previous_move_background()
-      }
+      binbo_bin_color = if(turn == :light, do: 0, else: 16)
+      binbo_atom_color = if(turn == :light, do: :white, else: :black)
+
+      check_highlight =
+        if :binbo_position.is_in_check(binbo_bin_color, :binbo.game_state(binbo_pid)) do
+          {:ok, pieces_list} = :binbo.get_pieces_list(binbo_pid, :notation)
+
+          {king_square, _, _} =
+            Enum.find(pieces_list, fn piece ->
+              case piece do
+                {_, ^binbo_atom_color, :king} -> true
+                _ -> false
+              end
+            end)
+
+          %{Renderer.from_chess_coord(king_square, flipped) => Renderer.in_check_color()}
+        else
+          %{}
+        end
+
+      Map.merge(
+        %{
+          prev_move_from => Renderer.previous_move_background(),
+          prev_move_to => Renderer.previous_move_background()
+        },
+        check_highlight
+      )
     else
       %{}
     end
