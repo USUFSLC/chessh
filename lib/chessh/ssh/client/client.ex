@@ -157,6 +157,11 @@ defmodule Chessh.SSH.Client do
       <<2>> -> :menu
       # Escape
       "\e" -> :menu
+      # VIM keys, per request
+      "k" -> :up
+      "j" -> :down
+      "h" -> :left
+      "l" -> :right
       # Arrow keys
       "\e[A" -> :up
       "\e[B" -> :down

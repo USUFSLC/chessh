@@ -179,6 +179,12 @@ textarea:focus {
   border: 1px solid var(--gold-color);
 }
 
+.man-page-title {
+  display: flex;
+  justify-content: space-between;
+  align-itemts: center;
+}
+
 .modal {
   display: flex;
   flex-direction: column;

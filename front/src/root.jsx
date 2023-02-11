@@ -42,6 +42,9 @@ export const Root = () => {
                 </a>
               </>
             )}
+            <Link className="link" to="/man-pages">
+              Man Pages
+            </Link>
           </div>
         </div>
         <div className="content">
