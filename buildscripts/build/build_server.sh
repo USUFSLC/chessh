@@ -9,22 +9,22 @@ chessh_path="$HOME/src/chessh"
 [ "$(which git)" != "" ] || sudo apt install -y git
 if [ "$(which docker)" = "" ]
 then
-	curl -sSL https://get.docker.com | sh
+	  curl -sSL https://get.docker.com | sh
 fi
 
 # Checkout source
 if [ ! -d $chessh_path ]
 then
-	mkdir -p $chessh_path
-	cd $chessh_path
-	git init
-	git remote add origin $chessh_source
-	git pull origin
-	git checkout main
-	git config pull.rebase true
+	  mkdir -p $chessh_path
+	  cd $chessh_path
+	  git init
+	  git remote add origin $chessh_source
+	  git pull origin
+	  git checkout main
+	  git config pull.rebase true
 else
-	cd $chessh_path
-	git pull origin main
+	  cd $chessh_path
+	  git pull origin main
 fi
 
 # Build

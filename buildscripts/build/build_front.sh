@@ -23,8 +23,8 @@ server {
 # Grab deps
 if [ $(which node) == "" ]
 then
-	curl -sSL https://deb.nodesource.com/setup_16.x | sudo bash -
-	sudo apt install -y nodejs
+	  curl -sSL https://deb.nodesource.com/setup_16.x | sudo bash -
+	  sudo apt install -y nodejs
 fi
 [ "$(which git)" != "" ] || sudo apt install -y git
 [ "$(which nginx)" != "" ] || sudo apt install -y nginx
@@ -32,16 +32,16 @@ fi
 # Checkout source
 if [ ! -d $chessh_path ]
 then
-	mkdir -p $chessh_path
-	cd $chessh_path
-	git init
-	git remote add origin $chessh_source
-	git pull origin
-	git checkout main
-	git config pull.rebase true
+	  mkdir -p $chessh_path
+	  cd $chessh_path
+	  git init
+	  git remote add origin $chessh_source
+	  git pull origin
+	  git checkout main
+	  git config pull.rebase true
 else
-	cd $chessh_path
-	git pull origin main
+	  cd $chessh_path
+	  git pull origin main
 fi
 
 # Build

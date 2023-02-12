@@ -3,11 +3,10 @@ import { Link } from "react-router-dom";
 
 import { useAuthContext } from "../context/auth_context";
 
-const generateSSHConfig = (username) => `
-Host chessh
+const generateSSHConfig = (username) => `Host chessh
   Hostname ${process.env.REACT_APP_SSH_SERVER}
   Port ${process.env.REACT_APP_SSH_PORT}
-  User "${username}"
+  User ${username.includes(" ") ? '"' + username + '"' : username}"
   PubkeyAuthentication yes
 `;
 

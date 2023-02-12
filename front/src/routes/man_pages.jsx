@@ -56,7 +56,7 @@ export const ManPages = () => {
           <ul>
             <li>Ctrl + b / Escape to return to the main menu.</li>
             <li>Ctrl + c / Ctrl + d to exit CheSSH at any point.</li>
-            <li>Arrow keys / vim keybinds to move around the board.</li>
+            <li>Arrow keys / hjkl keybinds to move around the board.</li>
             <li>
               Select a piece with "enter", and move it to a square by pressing
               "enter" again.

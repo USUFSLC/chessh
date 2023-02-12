@@ -21,12 +21,14 @@ defmodule Chessh.DiscordNotifier do
 
   @impl true
   def handle_info({:attempt_notification, notification} = body, state) do
-    [discord_notification_rate, discord_notification_rate_ms] =
+    [discord_notification_rate, discord_notification_rate_ms, reschedule_delay] =
       Application.get_env(:chessh, RateLimits)
-      |> Keyword.take([:discord_notification_rate, :discord_notification_rate_ms])
+      |> Keyword.take([
+        :discord_notification_rate,
+        :discord_notification_rate_ms,
+        :reschedule_delay
+      ])
       |> Keyword.values()
-
-    reschedule_delay = Application.get_env(:chessh, RateLimits)[:reschedule_delay]
 
     case Hammer.check_rate_inc(
            :redis,

@@ -167,7 +167,7 @@ function build_server_nodes() {
     copy_ssh_keys
     for node_id in "${server_node_ids[@]}"
     do
-        build_server $node_id
+        build_server $node_id &
     done
 }
 

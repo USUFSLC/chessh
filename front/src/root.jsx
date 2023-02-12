@@ -17,6 +17,9 @@ export const Root = () => {
             </Link>
           </div>
           <div className="nav">
+            <Link className="link" to="/man-pages">
+              Man Pages
+            </Link>
             {signedIn ? (
               <>
                 <Link className="link" to="/home">
@@ -42,9 +45,6 @@ export const Root = () => {
                 </a>
               </>
             )}
-            <Link className="link" to="/man-pages">
-              Man Pages
-            </Link>
           </div>
         </div>
         <div className="content">
