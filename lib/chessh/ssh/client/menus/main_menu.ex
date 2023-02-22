@@ -20,7 +20,7 @@ defmodule Chessh.SSH.Client.MainMenu do
   def tick_delay_ms(), do: 1000
   def max_displayed_options(), do: 4
   def max_box_cols(), do: @logo_cols
-  def title(), do: @logo
+  def title(), do: @logo ++ ["- Connected on: #{System.get_env("NODE_ID")}"]
 
   def initial_options(%State{player_session: %PlayerSession{} = player_session}) do
     [
