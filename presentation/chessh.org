@@ -1,0 +1,140 @@
+#+TITLE: Practicing Elixir by building concurrent, distributed, multiplayer games in the terminal
+#+AUTHOR: Lizzy Hunt (Simponic)
+
+* Introduction
+This meeting should be being streamed live, at [[https://linux.usu.edu/streams]].
+
+#+BEGIN_SRC elixir
+  defmodule Hello do
+    def hello() do
+      "Hello, Linux Club!"
+      |> IO.puts
+    end
+  end
+
+  Hello.hello()
+#+END_SRC
+
+** CheSSH
+CheSSH is a multiplayer distributed game of chess over SSH - let's take a quick look before diving into Elixir!
+
+[[https://chessh.linux.usu.edu]]
+
+* Elixir - Functional Meta-Programming
+Elixir is a self-proclaimed "dynamic, functional language for building scalable and maintainable applications". 
+Obviously, one of Elixir's main selling points must be its functional paradigm - its the second in the list. 
+
+We'll take a quick look at some features of Elixir, and find that functional programming brings a lot to the table.
+
+* Elixir - Concurrency
+Elixir is built on top of (and completely interoperable with) Erlang - a language developed to build massively fault-tolerant systems in the 80's
+for large telephone exchanges with hundreds of thousands of users.
+
+You can imagine (if you look past the many problems with this statement), Elixir and Erlang to be analogous to Python and C,
+respectively - but without the massive performance penalty.
+
+** The BEAM
+The BEAM powers Elixir's concurrency magic; by running a VM executing Erlang bytecode that holds one OS thread per core,
+and a separate process scheduler (and queue) on each. 
+
+Imagine an army of little goblins, and you give each a todo list. The goblins then go complete the tasks in the order best
+suited for them, and have the added benefit that they can talk to each other.
+
+** Concurrency - Demo!
+Here we will open up two terminals: one running an Elixir REPL on my machine, and another to SSH into my android here
+
+#+BEGIN_SRC python
+  import subprocess
+  import string
+  import random
+  cookie = ''.join(random.choices(string.ascii_uppercase +
+                                  string.digits, k=32))
+  host = "host"
+  android = "a02364151-23.bluezone.usu.edu"
+  
+  h = subprocess.Popen(f"alacritty -e rlwrap --always-readline iex --name lizzy@{host} --cookie {cookie}".split())
+  a = subprocess.Popen(f"alacritty -e ssh u0_a308@{android} -p 2222 rlwrap --always-readline iex --name android@{android} --cookie {cookie}".split())
+#+END_SRC
+
+#+BEGIN_SRC elixir
+  defmodule SpeakServer do
+    @sleep_between_msg 2000
+
+    def loop(queue \\ []) do
+      case queue do
+        [head | tail] ->
+          speak(head)
+
+          :timer.sleep(@sleep_between_msg)
+          loop(tail)
+        [] ->
+          receive do
+            msg ->
+              loop(queue ++ [msg])
+          end
+      end
+    end
+
+    defp speak(msg) do
+      System.cmd("espeak", [msg])
+    end
+  end
+
+  defmodule KVServer do
+    require Logger
+    @max_len_msg 32
+
+    def start(speak_server_pid, port) do
+      {:ok, socket} =
+        :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true])
+      
+      loop_acceptor(socket, speak_server_pid)
+    end
+
+    defp loop_acceptor(socket, speak_server_pid) do
+      {:ok, client} = :gen_tcp.accept(socket)
+      Task.start_link(fn -> serve(client, speak_server_pid) end)
+
+      loop_acceptor(socket, speak_server_pid)
+    end
+
+    defp serve(socket, speak_server_pid) do
+      msg = socket
+      |> read_line()
+      |> String.trim()
+
+      if valid_msg(msg) do
+        send(speak_server_pid, msg)
+      end
+
+      serve(socket, speak_server_pid)
+    end
+
+    defp read_line(socket) do
+      {:ok, data} = :gen_tcp.recv(socket, 0)
+      data
+    end
+
+    defp valid_msg(msg), do: String.length(msg) < @max_len_msg && String.match?(msg, ~r/^[A-Za-z ]+$/)
+  end
+
+  android = :"android@a02364151-23.bluezone.usu.edu"
+
+  Node.connect(android)
+  speak_server_pid = Node.spawn(android, &SpeakServer.loop/0)
+
+  KVServer.start(speak_server_pid, 42069)
+#+END_SRC
+
+This demo shows how we can:
++ Connect nodes running Elixir
++ Spawn processes on nodes and inter process communication
++ Basic Elixir constructs (pattern matching, atoms, function calls, referencing functions)
+
+* CheSSH
+With a very brief and quick exploration into concurrency with Elixir, we can now explore the architecture of CheSSH,
+and how it came to be on 5 raspberry pis
+
+<picture_of_pis>
+
+
