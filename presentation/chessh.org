@@ -1,9 +1,10 @@
-#+TITLE: Practicing Elixir by building concurrent, distributed, multiplayer games in the terminal
+#+TITLE: Practicing Elixir by Building Concurrent, Distributed, Multiplayer Games in the Terminal
 #+AUTHOR: Lizzy Hunt (Simponic)
 
-* Introduction
-This meeting should be being streamed live, at [[https://linux.usu.edu/streams]].
+* Reminder: linux.usu.edu
+This meeting should be being streamed live at [[https://linux.usu.edu/streams]].
 
+* Introduction
 #+BEGIN_SRC elixir
   defmodule Hello do
     def hello() do
@@ -20,18 +21,37 @@ CheSSH is a multiplayer distributed game of chess over SSH - let's take a quick 
 
 [[https://chessh.linux.usu.edu]]
 
-* Elixir - Functional Meta-Programming
-Elixir is a self-proclaimed "dynamic, functional language for building scalable and maintainable applications". 
-Obviously, one of Elixir's main selling points must be its functional paradigm - its the second in the list. 
+* Elixir - Functional Programming & Meta-Programming
+Elixir is a self-proclaimed "dynamic, functional language for building scalable and maintainable applications". Obviously, one of Elixir's
+main selling points is that of its functional paradigm - it's the second in the list. 
 
 We'll take a quick look at some features of Elixir, and find that functional programming brings a lot to the table.
+
+** Basic Data Types
+1. ~int~s, ~bool~s, ~string~s are all here
+   + ~1~, ~true~, ~"Hello"~
+2. Atoms: prefixed with ":" are named constants whose name is their value, similar to symbols in LISP
+   + ~:x~, ~:three~
+4. Maps: regular key-value store; keys can be literally anything, including other maps
+   + ~%{%{a: 1}: 2, %{a: 2}: :an_atom}~
+5. Lists: lists are singly-linked elements of "stuff"
+   + ~[1,2,3]~, ~[]~, ~[1, [2, :three, %{}]]~
+6. Tuples: tuples are fixed-size collections of "stuff"
+   + ~{1,2,3}~, ~{1, {2, 3}}~
+
+** Pattern Matching
+The match operator "=" does not mean its convential meaning of assignment, but instead an assertion of equivalence.
+
+This gives way to one of Elixir's unique features of pattern matching similar to that found in Rust's ~match~ or Scala's ~case~.
+
+
 
 * Elixir - Concurrency
 Elixir is built on top of (and completely interoperable with) Erlang - a language developed to build massively fault-tolerant systems in the 80's
 for large telephone exchanges with hundreds of thousands of users.
 
-You can imagine (if you look past the many problems with this statement), Elixir and Erlang to be analogous to Python and C,
-respectively - but without the massive performance penalty.
+You can imagine (if you look past the many problems with this statement), Elixir and Erlang to be analogous to Python and C, respectively - but
+without the massive performance penalty.
 
 ** The BEAM
 The BEAM powers Elixir's concurrency magic; by running a VM executing Erlang bytecode that holds one OS thread per core,
@@ -41,7 +61,7 @@ Imagine an army of little goblins, and you give each a todo list. The goblins th
 suited for them, and have the added benefit that they can talk to each other.
 
 ** Concurrency - Demo!
-Here we will open up two terminals: one running an Elixir REPL on my machine, and another to SSH into my android here
+Here we will open up two terminals: one running an Elixir REPL on my machine, and another to SSH into my android:
 
 #+BEGIN_SRC python
   import subprocess
@@ -79,7 +99,9 @@ Here we will open up two terminals: one running an Elixir REPL on my machine, an
       System.cmd("espeak", [msg])
     end
   end
+#+END_SRC
 
+#+BEGIN_SRC elixir
   defmodule KVServer do
     require Logger
     @max_len_msg 32
@@ -87,7 +109,7 @@ Here we will open up two terminals: one running an Elixir REPL on my machine, an
     def start(speak_server_pid, port) do
       {:ok, socket} =
         :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true])
-      
+
       loop_acceptor(socket, speak_server_pid)
     end
 
@@ -133,8 +155,8 @@ This demo shows how we can:
 
 * CheSSH
 With a very brief and quick exploration into concurrency with Elixir, we can now explore the architecture of CheSSH,
-and how it came to be on 5 raspberry pis
+and the hardware cluster it runs on:
 
-<picture_of_pis>
+[[./pis.jpeg]]
 
 
