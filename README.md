@@ -4,6 +4,8 @@ CheSSH is a distributed multiplayer implementation of the game of Chess over SSH
 written in Elixir, with Discord integrations to deliver alerts when players are 
 looking for opponents, or in games when it is a player's turn.
 
+https://user-images.githubusercontent.com/25559600/221317658-a80046ca-6009-456d-b43c-67d95baa4bf6.mp4
+
 ## Usage
 
 ### Dependencies
