@@ -1,5 +1,6 @@
 #+TITLE: Practicing Elixir by Building Concurrent, Distributed, Multiplayer Games in the Terminal
 #+AUTHOR: Lizzy Hunt (Simponic)
+#+STARTUP: fold inlineimages
 
 * Reminder: linux.usu.edu
 This meeting should be being streamed live at [[https://linux.usu.edu/streams]].
@@ -21,14 +22,11 @@ CheSSH is a multiplayer distributed game of chess over SSH - let's take a quick 
 
 [[https://chessh.linux.usu.edu]]
 
-* Elixir - Functional Programming & Meta-Programming
-Elixir is a self-proclaimed "dynamic, functional language for building scalable and maintainable applications". Obviously, one of Elixir's
-main selling points is that of its functional paradigm - it's the second in the list. 
-
-We'll take a quick look at some features of Elixir, and find that functional programming brings a lot to the table.
+* Elixir - What You Need
+Elixir is a self-proclaimed "dynamic, functional language for building scalable and maintainable applications".
 
 ** Basic Data Types
-1. ~int~s, ~bool~s, ~string~s are all here
+1. ~int~'s, ~bool~'s, ~string~'s are all here
    + ~1~, ~true~, ~"Hello"~
 2. Atoms: prefixed with ":" are named constants whose name is their value, similar to symbols in LISP
    + ~:x~, ~:three~
@@ -40,11 +38,165 @@ We'll take a quick look at some features of Elixir, and find that functional pro
    + ~{1,2,3}~, ~{1, {2, 3}}~
 
 ** Pattern Matching
-The match operator "=" does not mean its convential meaning of assignment, but instead an assertion of equivalence.
+The match operator "=" does not mean its convential meaning of assignment, but instead an assertion of equivalence. This gives way to a unique
+feature of Elixir - pattern matching (similar to that found in Rust's ~match~ or Scala's ~case~).
 
-This gives way to one of Elixir's unique features of pattern matching similar to that found in Rust's ~match~ or Scala's ~case~.
+With pattern matching we can access data from complex structures declaratively.
 
+For example:
+#+BEGIN_SRC elixir
+  [head | tail] = [1,2,3]
+  %{a: a_value} = %{a: 10}
+  {:ok, result} = {:ok, 2}
+  [head, tail, a_value, result]
+#+END_SRC
 
+And will raise an exception when the pattern cannot match:
+
+#+BEGIN_SRC elixir
+  %{a: a_value} = %{b: 10}
+#+END_SRC
+
+*** Error Handling
+Functions that can error will typically return a two-tuple, the first element of which is either the atom ~:ok~ or ~:error~, and the second is the
+error info or value.
+
+For many scenarios, the fact that a failed pattern match raises an exception is enough information to know we shouldn't execute further.
+#+BEGIN_SRC elixir
+  defmodule Sequences do
+    def fib(n) when n < 0, do: {:error, :too_small}
+    def fib(n) when n <= 1, do: {:ok, n} 
+    def fib(n) when n > 1 do
+      {:ok, n1} = fib(n-1)
+      {:ok, n2} = fib(n-2)
+
+      {:ok, n1 + n2}
+    end
+  end
+
+  {:ok, f10} = Sequences.fib(10)
+  {:ok, fn1} = Sequences.fib(-1)
+
+  IO.puts(fn1)
+#+END_SRC
+
+But sometimes we do want to capture that error information! In this case, we use ~case~!
+
+#+BEGIN_SRC elixir
+  case Sequences.fib(-1) do
+    {:ok, val} -> val
+    {:error, err} ->
+      IO.puts("Ran into :error #{inspect(err)}")
+      0
+  end
+#+END_SRC
+
+** Piping
+Elixir's pipe operator ~|>~ allows programmers to easily write statements as a composition of functions. It simply takes the value of the
+function on the left, and passes it as the first argument to the function on the right.
+
+For example, to find the length of the longest string in a list of strings:
+#+BEGIN_SRC elixir
+  ["Hello, world", "Another string", "Where are all these strings coming from"]
+  |> Enum.map(&String.length/1)
+  |> Enum.max()
+#+END_SRC
+
+** Meta-programming
+Akin to my favorite language of all time, LISP, Elixir provides a way to interact directly with code as data (and thus the AST) via a powerful macro system.
+
+However, they are not as elegant, and for that reason, Chris McCord suggests in his book "Metaprogramming Elixir":
+
+#+BEGIN_QUOTE
+Rule 1 : Don't Write Macros
+#+END_QUOTE
+
+The main reasoning is that it becomes difficult to debug, and hides too much from the user. These are fine trade-offs when you're working alone.
+
+*** when-prime the functional way
+#+BEGIN_SRC elixir
+  defmodule Prime do
+    def is_prime(2), do: true
+    def is_prime(n) when rem(n, 2) == 0 or n <= 1, do: false
+    def is_prime(n) do
+      is_prime_helper(n, 3)
+    end
+
+    defp is_prime_helper(n, i) when i * i > n, do: true
+    defp is_prime_helper(n, i) when rem(n, i) == 0, do: false
+    defp is_prime_helper(n, i) do
+      is_prime_helper(n, i + 2)
+    end
+  end
+#+END_SRC
+
+#+BEGIN_SRC elixir
+  when_prime_do = fn n, when_true, when_false ->
+    if Prime.is_prime(n) do
+      when_true.()
+    else
+      when_false.()
+    end
+  end
+
+  when_prime_do.(10, fn -> "10 is prime" end, fn -> "10 is not prime" end)
+#+END_SRC
+
+*** when-prime the metaprogramming way
+#+BEGIN_SRC elixir
+  defmodule When do
+    defmacro prime(n, do: true_body, else: false_body) do
+      quote do
+        if Prime.is_prime(unquote(n)), do: unquote(true_body), else: unquote(false_body)
+      end
+    end
+  end
+
+  require When
+  When.prime 10, do: "10 is prime", else: "10 is not prime"
+#+END_SRC
+
+*** Real-world use-case: ~use~
+One such use case for macros (besides those covered previously in my LISP presentation) is to emulate module "inheritance" to share functions.
+
+We can think of a module in Elixir as a set of functions. Then, we can perform unions of modules by the ~use~ macros.
+
+Additionally, with ~behaviours~ we can define callbacks to implement in each unioned module.
+
+#+BEGIN_SRC elixir
+  defmodule Animal do
+    @callback noise() :: String.t()
+
+    defmacro __using__(_opts) do
+      quote do
+        @behaviour Animal
+
+        def speak() do
+          IO.puts("#{__MODULE__} says #{noise()}")
+        end
+      end
+    end
+  end
+
+  defmodule Dog do
+    use Animal
+
+    def noise() do
+      "Bark"
+    end
+  end
+
+  defmodule Cat do
+    use Animal
+
+    def noise() do
+      "Meow"
+    end
+  end
+
+  Cat.speak()
+  Dog.speak()
+#+END_SRC
 
 * Elixir - Concurrency
 Elixir is built on top of (and completely interoperable with) Erlang - a language developed to build massively fault-tolerant systems in the 80's
@@ -154,9 +306,23 @@ This demo shows how we can:
 + Basic Elixir constructs (pattern matching, atoms, function calls, referencing functions)
 
 * CheSSH
-With a very brief and quick exploration into concurrency with Elixir, we can now explore the architecture of CheSSH,
+With a brief quick exploration into concurrency with Elixir, we can now explore the architecture of CheSSH,
 and the hardware cluster it runs on:
 
 [[./pis.jpeg]]
 
+** Erlang SSH Module - (maybe) building a tic tac toe game!
+So much networking stuff is built on top of Erlang that its standard library - OTP - has implementations for tons of stuff you'd regularly reach for a library to help; ssh, snmp,
+ftp, are all built in "OTP Applications".
 
+It requires a little bit of time with headaches, but the docs are generally pretty good (with occasional source code browsing): [[https://www.erlang.org/doc/man/ssh.html]]
+
+** Architecture
+[[./architecture.png]]
+
+** Lessons Learned
+1. Use Kubernetes (~buildscripts~ is so horribly janky it's actually funny)
+2. Docker was a great idea
+3. Don't hardcode IP's
+4. Don't try to use Multicast
+5. Load balancing SSH
