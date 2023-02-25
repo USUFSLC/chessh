@@ -50,15 +50,15 @@ presentation on Elixir:
 [https://github.com/Simponic/chessh/blob/main/presentation/chessh.org](https://github.com/Simponic/chessh/blob/main/presentation/chessh.org)
 
 
-### Environment Variables (mostly optional)
+## Environment Variables (mostly optional)
 + `REACT_APP_DISCORD_INVITE` is the invite link to the discord server with the 
   CheSSH bot
-+ `REACT_APP_DISCORD_OAUTH` is the link (after replacing the GET params) that will 
-  be used to start OAUTH from the frontend
++ `REACT_APP_DISCORD_OAUTH` is the link (after replacing the GET  URL params) that will 
+  be used to initiate discord OAUTH from the frontend
 + `CLIENT_REDIRECT_AFTER_OAUTH` & `SERVER_REDIRECT_URI` are self-explanatory
 + `REACT_APP_SSH_SERVER` and `REACT_APP_SSH_PORT` are used to build the .ssh config
   given to users on the home page of CheSSH after authentication
-+ `NEW_GAME_PINGABLE_ROLE_ID` is the role id of the role to ping when a player is
++ `NEW_GAME_PINGABLE_ROLE_ID` is the role id of the role to ping when one is
   looking for an opponent
 + `REMIND_MOVE_CHANNEL_ID` is the channel id to create private threads with players
   for move reminders and other communications
