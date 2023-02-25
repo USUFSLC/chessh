@@ -2,7 +2,7 @@
 
 CheSSH is a distributed multiplayer implementation of the game of Chess over SSH, 
 written in Elixir, with Discord integrations to deliver alerts when players are 
-looking for opponents, or in games when it is a player's turn.
+looking for opponents, or in games when it is one's turn.
 
 https://user-images.githubusercontent.com/25559600/221317658-a80046ca-6009-456d-b43c-67d95baa4bf6.mp4
 
@@ -12,8 +12,8 @@ https://user-images.githubusercontent.com/25559600/221317658-a80046ca-6009-456d-
 + `npm`
 + `elixir`
 + `postgresql`
-+ `redis` (which you can ignore if you only use the ETS backend for Hammer for 
-  `config/dev.exs`)
++ `redis` (which you can ignore if you only use the ETS backend for Hammer in 
+  `config/dev.exs` [set by default])
 
 ### Installation
 
@@ -39,6 +39,17 @@ npm install
 npm start
 ```
 
+## Architecture
+The process of building the pi cluster is wholly contained in the awful 
+`buildscripts`, which will individually `ssh` into separate pi's and build the 
+services locally there as well as update the load balancer pi's configurations for nginx 
+and HAproxy.
+
+More architecture talk of CheSSH can be found in my (albeit kinda cringe) FSLC 
+presentation on Elixir:
+[https://github.com/Simponic/chessh/blob/main/presentation/chessh.org](https://github.com/Simponic/chessh/blob/main/presentation/chessh.org)
+
+
 ### Environment Variables (mostly optional)
 + `REACT_APP_DISCORD_INVITE` is the invite link to the discord server with the 
   CheSSH bot
@@ -52,13 +63,3 @@ npm start
 + `REMIND_MOVE_CHANNEL_ID` is the channel id to create private threads with players
   for move reminders and other communications
 + `NEW_GAME_CHANNEL_ID` is similar to the above
-
-## Architecture
-The process of building the pi cluster is wholly contained in the awful 
-~buildscripts~, which will individually ~ssh~ into separate pi's and build the 
-services locally as well as update the load balancer pi's configurations for nginx 
-and HAproxy.
-
-More brief architecture talk of CheSSH can be in my (albeit kinda cringe) FSLC 
-presentation on Elixir:
-[https://github.com/Simponic/chessh/blob/main/presentation/chessh.org](https://github.com/Simponic/chessh/blob/main/presentation/chessh.org)
