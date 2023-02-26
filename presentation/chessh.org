@@ -5,6 +5,8 @@
 * Reminder: linux.usu.edu
 This meeting should be being streamed live at [[https://linux.usu.edu/streams]].
 
+(UPDATE: It is now archived at [[https://linux.usu.edu/stream/12]])
+
 * Introduction
 #+BEGIN_SRC elixir
   defmodule Hello do

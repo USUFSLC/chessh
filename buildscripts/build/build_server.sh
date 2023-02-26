@@ -37,5 +37,4 @@ cd $HOME
 sudo mv chessh.service /etc/systemd/system/chessh.service
 sudo systemctl daemon-reload
 sudo systemctl enable chessh
-sudo systemctl stop chessh
-sudo systemctl start chessh
+sudo systemctl restart chessh
