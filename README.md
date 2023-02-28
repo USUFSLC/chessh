@@ -63,3 +63,4 @@ presentation on Elixir:
 + `REMIND_MOVE_CHANNEL_ID` is the channel id to create private threads with players
   for move reminders and other communications
 + `NEW_GAME_CHANNEL_ID` is similar to the above
++ `CLUSTER_NODES` is a comma-separated list of nodes accepting connections to connect with libclustre
