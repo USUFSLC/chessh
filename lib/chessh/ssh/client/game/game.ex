@@ -370,7 +370,7 @@ defmodule Chessh.SSH.Client.Game do
          from,
          to,
          %State{
-           game: %Game{id: game_id, turn: turn},
+           game: %Game{game_moves: game_moves, id: game_id, turn: turn},
            binbo_pid: binbo_pid,
            flipped: flipped,
            color: turn
@@ -404,7 +404,8 @@ defmodule Chessh.SSH.Client.Game do
                 fen: fen,
                 moves: game.moves + 1,
                 turn: if(game.turn == :dark, do: :light, else: :dark),
-                last_move: attempted_move
+                last_move: attempted_move,
+                game_moves: if(game_moves, do: game_moves <> " ", else: "") <> attempted_move
               },
               changeset_from_status(status)
             )

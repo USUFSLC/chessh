@@ -12,6 +12,8 @@ defmodule Chessh.Game do
     field(:winner, Ecto.Enum, values: [:light, :dark, :none], default: :none)
     field(:status, Ecto.Enum, values: [:continue, :draw, :winner], default: :continue)
 
+    field(:game_moves, :string)
+
     belongs_to(:light_player, Player, foreign_key: :light_player_id)
     belongs_to(:dark_player, Player, foreign_key: :dark_player_id)
 
@@ -31,7 +33,8 @@ defmodule Chessh.Game do
       :last_move,
       :light_player_id,
       :dark_player_id,
-      :discord_thread_id
+      :discord_thread_id,
+      :game_moves
     ])
   end
 end
