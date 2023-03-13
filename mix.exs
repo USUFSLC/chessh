@@ -17,7 +17,7 @@ defmodule Chessh.MixProject do
   def application do
     [
       mod: {Chessh.Application, []},
-      extra_applications: [:logger, :crypto, :syn, :ssh, :plug_cowboy, :inets, :ssl]
+      extra_applications: [:logger, :crypto, :syn, :ssh, :plug_cowboy, :inets, :ssl, :binbo]
     ]
   end
 
