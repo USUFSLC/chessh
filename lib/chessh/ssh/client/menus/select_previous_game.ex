@@ -91,14 +91,11 @@ defmodule Chessh.SSH.Client.SelectPreviousGame do
       else: options
   end
 
-  def make_process_tuple(selected_id, %State{
-        player_session: player_session
-      }) do
+  def make_process_tuple(selected_id, _state) do
     game = Repo.get(Game, selected_id)
 
-    {Chessh.SSH.Client.Game,
-     %Chessh.SSH.Client.Game.State{
-       player_session: player_session,
+    {Chessh.SSH.Client.PreviousGame,
+     %Chessh.SSH.Client.PreviousGame.State{
        game: game
      }}
   end

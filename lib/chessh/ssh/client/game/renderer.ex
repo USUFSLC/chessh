@@ -69,8 +69,6 @@ defmodule Chessh.SSH.Client.Game.Renderer do
   end
 
   def render_board_state(%Game.State{
-        width: _width,
-        height: _height,
         highlighted: highlighted,
         flipped: flipped,
         game:
@@ -169,12 +167,18 @@ defmodule Chessh.SSH.Client.Game.Renderer do
     )
   end
 
-  defp draw_board(
-         fen,
-         {tile_width, tile_height} = tile_dims,
-         highlights,
-         flipped
-       ) do
+  def draw_board(
+        fen,
+        flipped
+      ),
+      do: draw_board(fen, {@tile_width, @tile_height}, %{}, flipped)
+
+  def draw_board(
+        fen,
+        {tile_width, tile_height} = tile_dims,
+        highlights,
+        flipped
+      ) do
     board_coord_to_piece_art = make_board_coordinate_to_piece_art_map(fen)
     tile_rows = make_board_tiles(tile_dims)
 

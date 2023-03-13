@@ -12,8 +12,6 @@ defmodule Chessh.SSH.Client.Game do
               game: nil,
               client_pid: nil,
               binbo_pid: nil,
-              width: 0,
-              height: 0,
               flipped: false,
               color: nil,
               player_session: nil
@@ -25,7 +23,6 @@ defmodule Chessh.SSH.Client.Game do
     :syn.add_node_to_scopes([:games])
     :ok = :syn.join(:games, {:game, game_id}, self())
 
-    :binbo.start()
     {:ok, binbo_pid} = :binbo.new_server()
     :binbo.new_game(binbo_pid, fen)
 
@@ -177,11 +174,9 @@ defmodule Chessh.SSH.Client.Game do
           flipped: player_color == :dark
       })
 
-    send(
-      client_pid,
-      {:send_to_ssh, [Utils.clear_codes() | Renderer.render_board_state(new_state)]}
-    )
-
+    # Clear screen and do initial render
+    send(client_pid, {:send_to_ssh, Utils.clear_codes()})
+    render(new_state)
     {:ok, new_state}
   end
 
@@ -227,8 +222,8 @@ defmodule Chessh.SSH.Client.Game do
   end
 
   def input(
-        width,
-        height,
+        _width,
+        _height,
         action,
         %State{
           move_from: move_from,
@@ -300,8 +295,6 @@ defmodule Chessh.SSH.Client.Game do
         state
         | cursor: new_cursor,
           move_from: new_move_from,
-          width: width,
-          height: height,
           flipped: if(action == "f", do: !flipped, else: flipped)
       })
 
@@ -349,13 +342,7 @@ defmodule Chessh.SSH.Client.Game do
       end
     end
 
-    send(client_pid, {:send_to_ssh, Renderer.render_board_state(new_state)})
-    new_state
-  end
-
-  def render(width, height, %State{client_pid: client_pid} = state) do
-    new_state = %State{state | width: width, height: height}
-    send(client_pid, {:send_to_ssh, Renderer.render_board_state(new_state)})
+    render(new_state)
     new_state
   end
 
@@ -498,5 +485,12 @@ defmodule Chessh.SSH.Client.Game do
       %{}
     end
     |> Map.merge(extra_highlights)
+  end
+
+  def render(_width, _height, %State{} = state), do: render(state)
+
+  def render(%State{client_pid: client_pid} = state) do
+    send(client_pid, {:send_to_ssh, Renderer.render_board_state(state)})
+    state
   end
 end

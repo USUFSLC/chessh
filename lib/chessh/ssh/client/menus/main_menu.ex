@@ -18,27 +18,27 @@ defmodule Chessh.SSH.Client.MainMenu do
 
   def dynamic_options(), do: false
   def tick_delay_ms(), do: 1000
-  def max_displayed_options(), do: 4
+  def max_displayed_options(), do: 5
   def max_box_cols(), do: @logo_cols
   def title(), do: @logo ++ ["- Connected on: #{System.get_env("NODE_ID")}"]
 
   def initial_options(%State{player_session: %PlayerSession{} = player_session}) do
     [
+      {"My Current Games",
+       {Chessh.SSH.Client.SelectCurrentGame,
+        %Chessh.SSH.Client.SelectPaginatePoller.State{player_session: player_session}}},
+      {"Joinable Games (lobby)",
+       {Chessh.SSH.Client.SelectJoinableGame,
+        %Chessh.SSH.Client.SelectPaginatePoller.State{player_session: player_session}}},
+      {"Previous Games",
+       {Chessh.SSH.Client.SelectPreviousGame,
+        %Chessh.SSH.Client.SelectPaginatePoller.State{player_session: player_session}}},
       {"Start A Game (Light)",
        {Chessh.SSH.Client.Game,
         %Chessh.SSH.Client.Game.State{player_session: player_session, color: :light}}},
       {"Start A Game (Dark)",
        {Chessh.SSH.Client.Game,
-        %Chessh.SSH.Client.Game.State{player_session: player_session, color: :dark}}},
-      {"Current Games",
-       {Chessh.SSH.Client.SelectCurrentGame,
-        %Chessh.SSH.Client.SelectPaginatePoller.State{player_session: player_session}}},
-      {"Previous Games",
-       {Chessh.SSH.Client.SelectPreviousGame,
-        %Chessh.SSH.Client.SelectPaginatePoller.State{player_session: player_session}}},
-      {"Joinable Games (lobby)",
-       {Chessh.SSH.Client.SelectJoinableGame,
-        %Chessh.SSH.Client.SelectPaginatePoller.State{player_session: player_session}}}
+        %Chessh.SSH.Client.Game.State{player_session: player_session, color: :dark}}}
     ]
   end
 
