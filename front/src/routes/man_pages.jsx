@@ -56,10 +56,28 @@ export const ManPages = () => {
           <ul>
             <li>Ctrl + b / Escape to return to the main menu.</li>
             <li>Ctrl + c / Ctrl + d to exit CheSSH at any point.</li>
-            <li>Arrow keys / hjkl keybinds to move around the board.</li>
             <li>
-              Select a piece with "enter", and move it to a square by pressing
+              Arrow keys / vim (hjkl) keybinds to move around the board and
+              menus.
+            </li>
+            <li>Select menu options with "enter".</li>
+            <li>
+              Select a game piece "enter", and move it to a square by pressing
               "enter" again.
+            </li>
+            <li>
+              In the "Previous Games" viewer, use h/l or left/right to view the
+              previous/next move.
+            </li>
+
+            <li>In a game board use "f" to flip the board.</li>
+            <li>
+              In the "Previous Games" viewer, use "m" to show the game's move
+              history in UCI notation (which you may convert to PGN{" "}
+              <a href="https://www.dcode.fr/uci-chess-notation" target="_blank">
+                here
+              </a>
+              ).
             </li>
           </ul>
         </div>

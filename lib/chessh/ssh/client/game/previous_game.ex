@@ -13,7 +13,8 @@ defmodule Chessh.SSH.Client.PreviousGame do
               binbo_pid: nil,
               game: %Game{},
               client_pid: nil,
-              flipped: false
+              flipped: false,
+              viewing_uci: false
   end
 
   use Chessh.SSH.Client.Screen
@@ -59,6 +60,7 @@ defmodule Chessh.SSH.Client.PreviousGame do
         %State{
           move_idx: move_idx,
           flipped: flipped,
+          viewing_uci: viewing_uci,
           game: %Game{
             moves: num_moves
           }
@@ -67,10 +69,10 @@ defmodule Chessh.SSH.Client.PreviousGame do
     new_move_idx =
       case action do
         :left ->
-          Utils.wrap_around(move_idx, -1, num_moves)
+          Utils.wrap_around(move_idx, -1, num_moves + 1)
 
         :right ->
-          Utils.wrap_around(move_idx, 1, num_moves)
+          Utils.wrap_around(move_idx, 1, num_moves + 1)
 
         _ ->
           move_idx
@@ -79,7 +81,8 @@ defmodule Chessh.SSH.Client.PreviousGame do
     new_state = %State{
       state
       | move_idx: new_move_idx,
-        flipped: if(action == "f", do: !flipped, else: flipped)
+        flipped: if(action == "f", do: !flipped, else: flipped),
+        viewing_uci: if(action == "m", do: !viewing_uci, else: viewing_uci)
     }
 
     render(new_state)
@@ -92,15 +95,33 @@ defmodule Chessh.SSH.Client.PreviousGame do
           client_pid: client_pid,
           move_fens: move_fens,
           move_idx: move_idx,
-          game: %Game{id: game_id, moves: total_moves}
+          game: %Game{id: game_id, moves: total_moves, game_moves: game_moves},
+          viewing_uci: viewing_uci
         } = state
       ) do
-    {:ok, fen} = Map.fetch(move_fens, "#{move_idx}")
-
     lines =
-      ["Game #{game_id} | Move #{move_idx} / #{total_moves}"] ++
-        Renderer.draw_board(fen, flipped) ++
-        ["<- previous | next ->"]
+      case viewing_uci do
+        false ->
+          {:ok, fen} = Map.fetch(move_fens, "#{move_idx}")
+
+          [
+            "Game #{game_id} | Move #{move_idx} / #{total_moves}",
+            "| <- previous move | next move ->",
+            "| press 'm' to view move history",
+            "==="
+          ] ++
+            Renderer.draw_board(fen, flipped)
+
+        true ->
+          [
+            Utils.clear_codes(),
+            "UCI Notation For Game #{game_id}",
+            "- Press 'm' to go back to the board",
+            "- Use https://dcode.fr/uci-chess-notation to convert to PGN",
+            "",
+            game_moves
+          ]
+      end
 
     send(
       client_pid,
@@ -111,7 +132,7 @@ defmodule Chessh.SSH.Client.PreviousGame do
            fn {i, line} ->
              [ANSI.cursor(i, 0), ANSI.clear_line(), line]
            end
-         )}
+         ) ++ [ANSI.home()]}
     )
 
     state
