@@ -24,19 +24,24 @@ git clone https://github.com/Simponic/chessh
 cd chessh
 
 cp .env.example .env
+vim .env # Fill it out mf
 chmod 0700 .env
-
-# In one shell (after filling in your .env), start CheSSH
 export $(cat .env | xargs)
+
+# In one shell (after filling in your .env), migrate schema and start CheSSH
 mix ecto.create
 mix ecto.migrate
-iex -S mix
+mix deps.compile
 
-# In another shell, start the frontend
-export $(cat .env | xargs)
+# Install frontend stuff
 cd front
 npm install
 npm start
+
+# Run the frontend and server concurrently!
+cd ..
+npm install -g concurrently
+concurrently "mix run --no-halt" "cd front && npm start"
 ```
 
 ## Architecture
