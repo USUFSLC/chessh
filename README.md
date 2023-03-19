@@ -19,7 +19,7 @@ https://user-images.githubusercontent.com/25559600/221317658-a80046ca-6009-456d-
 
 Do something among the lines of:
 
-```
+```bash
 git clone https://github.com/Simponic/chessh
 cd chessh
 
