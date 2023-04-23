@@ -32,7 +32,10 @@ defmodule Chessh.SSH.Client.Game do
   def init([
         %State{
           color: color,
-          game: %Game{dark_player_id: dark_player_id, light_player_id: light_player_id},
+          game: %Game{
+            dark_player_id: dark_player_id,
+            light_player_id: light_player_id
+          },
           player_session: %{player_id: player_id}
         } = state
         | tail
@@ -47,7 +50,6 @@ defmodule Chessh.SSH.Client.Game do
       else
         case {is_nil(dark_player_id), is_nil(light_player_id)} do
           {true, false} -> %State{state | color: :dark}
-          {false, true} -> %State{state | color: :light}
           {_, _} -> %State{state | color: :light}
         end
       end
@@ -210,6 +212,12 @@ defmodule Chessh.SSH.Client.Game do
         :player_joined,
         %State{client_pid: client_pid, game: %Game{id: game_id}} = state
       ) do
+    GenServer.cast(
+      :discord_notifier,
+      {:schedule_notification, {:player_joined, game_id},
+       Application.get_env(:chessh, DiscordNotifications)[:game_player_joined_notif_delay_ms]}
+    )
+
     game = Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player])
     new_state = %State{state | game: game}
     send(client_pid, {:send_to_ssh, Renderer.render_board_state(new_state)})

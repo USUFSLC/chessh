@@ -36,7 +36,10 @@ mix deps.compile
 # Install frontend stuff
 cd front
 npm install
-npm start
+
+# Generate SSH keys
+cd ../priv
+./make_keys.sh
 
 # Run the frontend and server concurrently!
 cd ..
