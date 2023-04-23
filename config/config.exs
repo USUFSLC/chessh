@@ -26,6 +26,7 @@ config :chessh, Web,
 config :chessh, DiscordNotifications,
   game_move_notif_delay_ms: 0,
   game_created_notif_delay_ms: 15_000,
+  game_player_joined_notif_delay_ms: 0,
   reschedule_delay: 3 * 1000
 
 config :joken, default_signer: "secret"

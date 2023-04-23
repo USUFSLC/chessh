@@ -54,11 +54,30 @@ defmodule Chessh.DiscordNotifier do
     {:noreply, state}
   end
 
+  defp send_notification({:player_joined, game_id}) do
+    case Repo.get(Game, game_id) |> Repo.preload([:dark_player, :light_player]) do
+      %Game{
+        status: :continue,
+        dark_player: %Player{discord_id: dark_player_discord_id},
+        light_player: %Player{discord_id: light_player_discord_id}
+      } = game ->
+        game = maybe_put_new_thread_on_game(game)
+
+        post_discord(
+          game.discord_thread_id,
+          %{
+            content:
+              "Everyone (<@#{dark_player_discord_id}> as the dark pieces, <@#{light_player_discord_id}> as light) has joined! Play chess!"
+          }
+        )
+
+      _ ->
+        nil
+    end
+  end
+
   defp send_notification({:move_reminder, game_id}) do
-    [min_delta_t, remind_move_channel_id] =
-      Application.get_env(:chessh, DiscordNotifications)
-      |> Keyword.take([:game_move_notif_delay_ms, :remind_move_channel_id])
-      |> Keyword.values()
+    min_delta_t = Application.get_env(:chessh, DiscordNotifications)[:game_move_notif_delay_ms]
 
     case Repo.get(Game, game_id) |> Repo.preload([:dark_player, :light_player]) do
       %Game{
@@ -68,23 +87,10 @@ defmodule Chessh.DiscordNotifier do
         last_move: last_move,
         updated_at: last_updated,
         moves: move_count,
-        status: :continue,
-        discord_thread_id: discord_thread_id
+        status: :continue
       } = game ->
         delta_t = NaiveDateTime.diff(NaiveDateTime.utc_now(), last_updated, :millisecond)
-
-        game =
-          if is_nil(discord_thread_id) do
-            {:ok, game} =
-              Game.changeset(game, %{
-                discord_thread_id: make_private_discord_thread_id(remind_move_channel_id, game)
-              })
-              |> Repo.update()
-
-            game
-          else
-            game
-          end
+        game = maybe_put_new_thread_on_game(game)
 
         if delta_t >= min_delta_t do
           post_discord(
@@ -232,5 +238,22 @@ defmodule Chessh.DiscordNotifier do
   defp make_authorization_header() do
     bot_token = Application.get_env(:chessh, DiscordNotifications)[:discord_bot_token]
     {'Authorization', 'Bot #{bot_token}'}
+  end
+
+  defp maybe_put_new_thread_on_game(%Game{discord_thread_id: discord_thread_id} = game) do
+    remind_move_channel_id =
+      Application.get_env(:chessh, DiscordNotifications)[:remind_move_channel_id]
+
+    if is_nil(discord_thread_id) do
+      {:ok, game} =
+        Game.changeset(game, %{
+          discord_thread_id: make_private_discord_thread_id(remind_move_channel_id, game)
+        })
+        |> Repo.update()
+
+      game
+    else
+      game
+    end
   end
 end
