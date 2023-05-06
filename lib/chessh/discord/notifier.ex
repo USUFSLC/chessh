@@ -59,7 +59,8 @@ defmodule Chessh.DiscordNotifier do
       %Game{
         status: :continue,
         dark_player: %Player{discord_id: dark_player_discord_id},
-        light_player: %Player{discord_id: light_player_discord_id}
+        light_player: %Player{discord_id: light_player_discord_id},
+        discord_thread_id: nil
       } = game ->
         game = maybe_put_new_thread_on_game(game)
 

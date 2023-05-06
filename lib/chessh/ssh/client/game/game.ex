@@ -155,6 +155,12 @@ defmodule Chessh.SSH.Client.Game do
 
     if status == :ok && maybe_joined_game do
       :syn.publish(:games, {:game, game_id}, :player_joined)
+
+      GenServer.cast(
+        :discord_notifier,
+        {:schedule_notification, {:player_joined, game_id},
+         Application.get_env(:chessh, DiscordNotifications)[:game_player_joined_notif_delay_ms]}
+      )
     end
 
     binbo_pid = initialize_game(game_id, fen)
@@ -212,12 +218,6 @@ defmodule Chessh.SSH.Client.Game do
         :player_joined,
         %State{client_pid: client_pid, game: %Game{id: game_id}} = state
       ) do
-    GenServer.cast(
-      :discord_notifier,
-      {:schedule_notification, {:player_joined, game_id},
-       Application.get_env(:chessh, DiscordNotifications)[:game_player_joined_notif_delay_ms]}
-    )
-
     game = Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player])
     new_state = %State{state | game: game}
     send(client_pid, {:send_to_ssh, Renderer.render_board_state(new_state)})
