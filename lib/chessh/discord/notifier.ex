@@ -55,6 +55,8 @@ defmodule Chessh.DiscordNotifier do
   end
 
   defp send_notification({:player_joined, game_id}) do
+    Logger.info("Player joined in #{game_id}")
+
     case Repo.get(Game, game_id) |> Repo.preload([:dark_player, :light_player]) do
       %Game{
         status: :continue,

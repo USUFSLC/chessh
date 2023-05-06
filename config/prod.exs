@@ -1,7 +1,7 @@
 import Config
 
 config :logger,
-  level: :warning,
+  level: :info,
   truncate: 4096
 
 config :chessh, RateLimits,
