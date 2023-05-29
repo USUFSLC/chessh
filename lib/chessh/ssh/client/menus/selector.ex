@@ -1,4 +1,4 @@
-defmodule Chessh.SSH.Client.GameSelector do
+defmodule Chessh.SSH.Client.Selector do
   import Ecto.Query
   alias Chessh.Repo
 
@@ -17,7 +17,6 @@ defmodule Chessh.SSH.Client.GameSelector do
         sorted_query
       end
       |> Repo.all()
-      |> Repo.preload([:light_player, :dark_player])
 
     if direction == :desc, do: results, else: Enum.reverse(results)
   end

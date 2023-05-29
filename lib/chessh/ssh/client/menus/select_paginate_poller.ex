@@ -26,7 +26,8 @@ defmodule Chessh.SSH.Client.SelectPaginatePoller do
               player_session: nil,
               options: [],
               tick: 0,
-              cursor: nil
+              cursor: nil,
+              extra_info: %{}
   end
 
   defmacro __using__(_) do
@@ -127,51 +128,55 @@ defmodule Chessh.SSH.Client.SelectPaginatePoller do
         max_item = min(length(options), max_displayed_options())
 
         new_state =
-          if(max_item > 0,
-            do:
-              case action do
-                :up ->
-                  %State{
-                    state
-                    | selected_option_idx: Utils.wrap_around(selected_option_idx, -1, max_item),
-                      tick: 0
-                  }
-
-                :down ->
-                  %State{
-                    state
-                    | selected_option_idx: Utils.wrap_around(selected_option_idx, 1, max_item),
-                      tick: 0
-                  }
-
-                :left ->
-                  if dynamic_options(),
-                    do: %State{
+          if max_item > 0 do
+            if action == :return do
+              {_, selected} = Enum.at(options, selected_option_idx)
+              {module, state} = make_process_tuple(selected, state)
+              send(client_pid, {:set_screen_process, module, state})
+              state
+            else
+              if(max_item > 1) do
+                case action do
+                  :up ->
+                    %State{
                       state
-                      | options: previous_page_options(state),
-                        selected_option_idx: 0,
+                      | selected_option_idx: Utils.wrap_around(selected_option_idx, -1, max_item),
                         tick: 0
                     }
 
-                :right ->
-                  if dynamic_options(),
-                    do: %State{
+                  :down ->
+                    %State{
                       state
-                      | options: next_page_options(state),
-                        selected_option_idx: 0,
+                      | selected_option_idx: Utils.wrap_around(selected_option_idx, 1, max_item),
                         tick: 0
                     }
 
-                :return ->
-                  {_, selected} = Enum.at(options, selected_option_idx)
-                  {module, state} = make_process_tuple(selected, state)
-                  send(client_pid, {:set_screen_process, module, state})
-                  state
+                  :left ->
+                    if dynamic_options(),
+                      do: %State{
+                        state
+                        | options: previous_page_options(state),
+                          selected_option_idx: 0,
+                          tick: 0
+                      }
 
-                _ ->
-                  nil
+                  :right ->
+                    if dynamic_options(),
+                      do: %State{
+                        state
+                        | options: next_page_options(state),
+                          selected_option_idx: 0,
+                          tick: 0
+                      }
+
+                  _ ->
+                    state
+                end
+              else
+                state
               end
-          ) || state
+            end
+          end
 
         if !(action == :return) do
           render(width, height, new_state)
@@ -229,7 +234,7 @@ defmodule Chessh.SSH.Client.SelectPaginatePoller do
 
               if i == selected_option_idx do
                 ANSI.format_fragment(
-                  [:light_cyan, :bright, "> #{line} <", :reset],
+                  [:light_cyan, :bright, "♜ #{line} ♜", :reset],
                   true
                 )
               else
@@ -238,7 +243,7 @@ defmodule Chessh.SSH.Client.SelectPaginatePoller do
             end
           )
         else
-          ["Looks like there's nothing here.", "Use Ctrl+b to go back."]
+          ["Looks like there's nothing here.", "Use Ctrl+b return to the menu."]
         end
       end
 

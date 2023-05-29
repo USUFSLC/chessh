@@ -1,6 +1,6 @@
 defmodule Chessh.SSH.Client.SelectCurrentGame do
   alias Chessh.{Utils, Repo, Game, PlayerSession}
-  alias Chessh.SSH.Client.GameSelector
+  alias Chessh.SSH.Client.Selector
   import Ecto.Query
   require Logger
 
@@ -12,7 +12,7 @@ defmodule Chessh.SSH.Client.SelectCurrentGame do
   def dynamic_options(), do: true
 
   def get_player_sorted_current_games_with_id(player_id, current_id \\ nil, direction \\ :desc) do
-    GameSelector.paginate_ish_query(
+    Selector.paginate_ish_query(
       Game
       |> where([g], g.status == :continue)
       |> where([g], g.light_player_id == ^player_id or g.dark_player_id == ^player_id)
@@ -20,6 +20,7 @@ defmodule Chessh.SSH.Client.SelectCurrentGame do
       current_id,
       direction
     )
+    |> Repo.preload([:light_player, :dark_player, :bot])
   end
 
   def format_game_selection_tuple(%Game{id: game_id} = game) do
@@ -67,7 +68,7 @@ defmodule Chessh.SSH.Client.SelectCurrentGame do
       order_by: [desc: g.id]
     )
     |> Repo.all()
-    |> Repo.preload([:light_player, :dark_player])
+    |> Repo.preload([:light_player, :dark_player, :bot])
     |> Enum.map(&format_game_selection_tuple/1)
   end
 
@@ -78,7 +79,7 @@ defmodule Chessh.SSH.Client.SelectCurrentGame do
     previous_last_game_id =
       case List.last(options) do
         {_label, id} -> id
-        _ -> 0
+        _ -> 1
       end
 
     current_screen_games =

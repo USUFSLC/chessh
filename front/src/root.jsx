@@ -10,18 +10,18 @@ export const Root = () => {
   return (
     <>
       <div className="container">
+        <div className="flex-row-around">
+          <Link to="/home">
+            <img src={logo} className="logo" alt="CheSSH Logo" />
+          </Link>
+        </div>
         <div className="navbar">
-          <div className="flex-row-around">
-            <Link to="/home">
-              <img src={logo} className="logo" alt="CheSSH Logo" />
-            </Link>
-          </div>
           <div className="nav">
-            <Link className="link" to="/man-pages">
-              Man Pages
-            </Link>
             {signedIn ? (
               <>
+                <Link className="button" onClick={signOut} to="/">
+                  Sign Out
+                </Link>
                 <Link className="link" to="/home">
                   Home
                 </Link>
@@ -31,8 +31,8 @@ export const Root = () => {
                 <Link className="link" to="/keys">
                   Keys
                 </Link>
-                <Link className="button" onClick={signOut} to="/">
-                  Sign Out
+                <Link className="link" to="/bots">
+                  Bots
                 </Link>
               </>
             ) : (
@@ -45,6 +45,10 @@ export const Root = () => {
                 </a>
               </>
             )}
+
+            <Link className="link" to="/man-pages">
+              Man Pages
+            </Link>
           </div>
         </div>
         <div className="content">

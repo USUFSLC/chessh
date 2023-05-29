@@ -1,9 +1,7 @@
 defmodule Chessh.SSH.Client.Game do
   require Logger
-  alias Chessh.{Game, Utils, Repo}
+  alias Chessh.{Game, Utils, Repo, Bot}
   alias Chessh.SSH.Client.Game.Renderer
-
-  @default_fen "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
   defmodule State do
     defstruct cursor: %{x: 7, y: 7},
@@ -69,27 +67,14 @@ defmodule Chessh.SSH.Client.Game do
 
     case Hammer.check_rate_inc(
            :redis,
-           "player-#{state.player_session.id}-create-game-rate",
+           "player-#{state.player_session.player_id}-create-game-rate",
            create_game_ms,
            create_game_rate,
            1
          ) do
       {:allow, _count} ->
-        # Starting a new game
-        {:ok, %Game{id: game_id} = game} =
-          Game.changeset(
-            %Game{},
-            Map.merge(
-              if(color == :light,
-                do: %{light_player_id: player_session.player_id},
-                else: %{dark_player_id: player_session.player_id}
-              ),
-              %{
-                fen: @default_fen
-              }
-            )
-          )
-          |> Repo.insert()
+        game = Game.new_game(color, player_session.player_id) |> Repo.insert!()
+        %Game{id: game_id} = game
 
         GenServer.cast(
           :discord_notifier,
@@ -129,20 +114,23 @@ defmodule Chessh.SSH.Client.Game do
               id: game_id,
               fen: fen,
               dark_player_id: dark_player_id,
-              light_player_id: light_player_id
+              light_player_id: light_player_id,
+              bot_id: bot_id
             } = game
         } = state
         | _
       ]) do
     maybe_changeset =
-      case color do
-        :light ->
-          if !light_player_id,
-            do: Game.changeset(game, %{light_player_id: player_session.player_id})
+      if !bot_id do
+        case(color) do
+          :light ->
+            if !light_player_id,
+              do: Game.changeset(game, %{light_player_id: player_session.player_id})
 
-        :dark ->
-          if !dark_player_id,
-            do: Game.changeset(game, %{dark_player_id: player_session.player_id})
+          :dark ->
+            if !dark_player_id,
+              do: Game.changeset(game, %{dark_player_id: player_session.player_id})
+        end
       end
 
     {status, maybe_joined_game} =
@@ -164,7 +152,7 @@ defmodule Chessh.SSH.Client.Game do
     end
 
     binbo_pid = initialize_game(game_id, fen)
-    game = Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player])
+    game = Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player, :bot])
 
     player_color = if(game.light_player_id == player_session.player_id, do: :light, else: :dark)
 
@@ -206,7 +194,7 @@ defmodule Chessh.SSH.Client.Game do
          }
        end).(%State{
         state
-        | game: Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player])
+        | game: Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player, :bot])
       })
 
     send(client_pid, {:send_to_ssh, Renderer.render_board_state(new_state)})
@@ -218,7 +206,7 @@ defmodule Chessh.SSH.Client.Game do
         :player_joined,
         %State{client_pid: client_pid, game: %Game{id: game_id}} = state
       ) do
-    game = Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player])
+    game = Repo.get(Game, game_id) |> Repo.preload([:light_player, :dark_player, :bot])
     new_state = %State{state | game: game}
     send(client_pid, {:send_to_ssh, Renderer.render_board_state(new_state)})
     {:noreply, new_state}
@@ -391,21 +379,14 @@ defmodule Chessh.SSH.Client.Game do
       {:ok, status} ->
         {:ok, fen} = :binbo.get_fen(binbo_pid)
 
-        {:ok, %Game{status: after_move_status}} =
+        {:ok, %Game{status: after_move_status} = game} =
           game
-          |> Game.changeset(
-            Map.merge(
-              %{
-                fen: fen,
-                moves: game.moves + 1,
-                turn: if(game.turn == :dark, do: :light, else: :dark),
-                last_move: attempted_move,
-                game_moves: if(game_moves, do: game_moves <> " ", else: "") <> attempted_move
-              },
-              changeset_from_status(status)
-            )
-          )
+          |> Game.update_with_status(attempted_move, fen, status)
           |> Repo.update()
+
+        if !is_nil(game.bot) do
+          spawn(fn -> Bot.send_update(Repo.get(Game, game.id) |> Repo.preload([:bot])) end)
+        end
 
         :syn.publish(:games, {:game, game_id}, {:new_move, attempted_move})
 
@@ -431,22 +412,6 @@ defmodule Chessh.SSH.Client.Game do
     Logger.debug("No matching clause for move attempt - must be illegal?")
 
     nil
-  end
-
-  defp changeset_from_status(game_status) do
-    case game_status do
-      :continue ->
-        %{}
-
-      {:draw, _} ->
-        %{status: :draw}
-
-      {:checkmate, :white_wins} ->
-        %{status: :winner, winner: :light}
-
-      {:checkmate, :black_wins} ->
-        %{status: :winner, winner: :dark}
-    end
   end
 
   defp make_highlight_map(

@@ -1,4 +1,6 @@
 defmodule Chessh.Utils do
+  require Logger
+
   @ascii_chars Application.compile_env!(:chessh, :ascii_chars_json_file)
                |> File.read!()
                |> Jason.decode!()
@@ -34,5 +36,9 @@ defmodule Chessh.Utils do
   def wrap_around(index, delta, length) do
     calc = index + delta
     if(calc < 0, do: length, else: 0) + rem(calc, length)
+  end
+
+  def random_token() do
+    :crypto.strong_rand_bytes(16) |> Base.encode16()
   end
 end

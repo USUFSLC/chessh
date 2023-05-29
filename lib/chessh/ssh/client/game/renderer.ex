@@ -2,6 +2,7 @@ defmodule Chessh.SSH.Client.Game.Renderer do
   alias IO.ANSI
   alias Chessh.{Utils, Player}
   alias Chessh.SSH.Client.Game
+  require Logger
 
   @chess_board_height 8
   @chess_board_width 8
@@ -42,29 +43,17 @@ defmodule Chessh.SSH.Client.Game.Renderer do
         %Game.State{
           game:
             %Chessh.Game{
-              light_player: light_player
-            } = game
-        } = state
-      )
-      when is_nil(light_player) do
-    render_board_state(%Game.State{
-      state
-      | game: %Chessh.Game{game | light_player: %Player{username: "(no opponent)"}}
-    })
-  end
-
-  def render_board_state(
-        %Game.State{
-          game:
-            %Chessh.Game{
+              light_player: light_player,
               dark_player: dark_player
             } = game
         } = state
       )
-      when is_nil(dark_player) do
+      when is_nil(light_player) or is_nil(dark_player) do
+    {light_player, dark_player} = get_players(game)
+
     render_board_state(%Game.State{
       state
-      | game: %Chessh.Game{game | dark_player: %Player{username: "(no opponent)"}}
+      | game: %Chessh.Game{game | light_player: light_player, dark_player: dark_player}
     })
   end
 
@@ -73,9 +62,12 @@ defmodule Chessh.SSH.Client.Game.Renderer do
         flipped: flipped,
         game:
           %Chessh.Game{
-            fen: fen
+            fen: fen,
+            light_player: light_player,
+            dark_player: dark_player
           } = game
-      }) do
+      })
+      when not is_nil(light_player) and not is_nil(dark_player) do
     rendered = [
       ANSI.clear_line(),
       make_status_line(game, true)
@@ -98,29 +90,19 @@ defmodule Chessh.SSH.Client.Game.Renderer do
 
   def make_status_line(
         %Chessh.Game{
-          light_player: light_player
-        } = game,
-        fancy
-      )
-      when is_nil(light_player),
-      do:
-        make_status_line(
-          %Chessh.Game{game | light_player: %Player{username: "(no opponent)"}},
-          fancy
-        )
-
-  def make_status_line(
-        %Chessh.Game{
+          light_player: light_player,
           dark_player: dark_player
         } = game,
         fancy
       )
-      when is_nil(dark_player),
-      do:
-        make_status_line(
-          %Chessh.Game{game | dark_player: %Player{username: "(no opponent)"}},
-          fancy
-        )
+      when is_nil(light_player) or is_nil(dark_player) do
+    {light_player, dark_player} = get_players(game)
+
+    make_status_line(
+      %Chessh.Game{game | light_player: light_player, dark_player: dark_player},
+      fancy
+    )
+  end
 
   def make_status_line(
         %Chessh.Game{
@@ -143,12 +125,12 @@ defmodule Chessh.SSH.Client.Game.Renderer do
         "Game #{game_id} - ",
         if(fancy,
           do: ANSI.format_fragment([@light_piece_color, light_player]),
-          else: "#{light_player} (L)"
+          else: "♔ #{light_player}"
         ),
         "#{if fancy, do: ANSI.default_color(), else: ""} --vs-- ",
         if(fancy,
           do: ANSI.format_fragment([@dark_piece_color, dark_player]),
-          else: "#{dark_player} (D)"
+          else: "♚ #{dark_player}"
         ),
         if(fancy, do: ANSI.default_color(), else: ""),
         case status do
@@ -372,5 +354,26 @@ defmodule Chessh.SSH.Client.Game.Renderer do
     |> Enum.reduce(%{}, fn pieces_map_for_this_row, acc ->
       Map.merge(acc, pieces_map_for_this_row)
     end)
+  end
+
+  defp get_players(
+         %Chessh.Game{light_player: light_player, dark_player: dark_player, bot: bot} = game
+       ) do
+    case {is_nil(light_player), is_nil(dark_player), is_nil(bot)} do
+      {false, true, false} ->
+        {game.light_player, %Player{username: bot.name}}
+
+      {true, false, false} ->
+        {%Player{username: bot.name}, game.dark_player}
+
+      {true, false, true} ->
+        {%Player{username: "(no opponent)"}, game.dark_player}
+
+      {false, true, true} ->
+        {game.light_player, %Player{username: "(no opponent)"}}
+
+      {false, false, true} ->
+        {game.light_player, game.dark_player}
+    end
   end
 end
