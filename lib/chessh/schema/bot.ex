@@ -37,7 +37,6 @@ defmodule Chessh.Bot do
         bot: %Chessh.Bot{id: bot_id, name: bot_name},
         fen: fen,
         turn: turn,
-        last_move: last_move,
         status: status,
         light_player_id: light_player_id,
         dark_player_id: dark_player_id
@@ -50,7 +49,6 @@ defmodule Chessh.Bot do
       turn: Atom.to_string(turn),
       bot_turn:
         (is_nil(light_player_id) && turn == :light) || (is_nil(dark_player_id) && turn == :dark),
-      last_move: last_move,
       status: Atom.to_string(status)
     }
   end

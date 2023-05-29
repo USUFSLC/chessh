@@ -106,6 +106,8 @@ defmodule Chessh.SSH.Client.SelectBot do
           )
           |> Repo.insert()
 
+        spawn(fn -> Bot.send_update(game |> Repo.preload([:bot])) end)
+
         {Chessh.SSH.Client.Game,
          %Chessh.SSH.Client.Game.State{player_session: player_session, color: color, game: game}}
 

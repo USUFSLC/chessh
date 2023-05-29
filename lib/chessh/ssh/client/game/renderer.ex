@@ -10,10 +10,11 @@ defmodule Chessh.SSH.Client.Game.Renderer do
   @tile_width 7
   @tile_height 4
 
-  @previous_move_background ANSI.light_magenta_background()
-  @from_select_background ANSI.light_green_background()
-  @to_select_background ANSI.light_yellow_background()
-  @in_check_color ANSI.yellow_background()
+  @previous_move_background ANSI.color_background(208)
+  @from_select_background ANSI.color_background(105)
+
+  @to_select_background ANSI.color_background(177)
+  @in_check_color ANSI.color_background(197)
 
   @dark_piece_color ANSI.red()
   @light_piece_color ANSI.light_cyan()

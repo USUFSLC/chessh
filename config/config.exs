@@ -19,7 +19,7 @@ config :chessh, RateLimits,
   discord_notification_rate: 30,
   discord_notification_rate_ms: 1000,
   bot_redrive_rate: 1,
-  bot_redrive_rate_ms: 60_000
+  bot_redrive_rate_ms: 30_000
 
 config :chessh, Web,
   discord_oauth_login_url: "https://discord.com/api/oauth2/token",
