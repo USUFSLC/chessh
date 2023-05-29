@@ -1,6 +1,6 @@
 import Modal from "react-modal";
 import { useAuthContext } from "../context/auth_context";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 
 Modal.setAppElement("#root");
 
@@ -147,7 +147,7 @@ const BotButton = ({ onSave, givenBot }) => {
 };
 
 export const BotCard = ({ botStruct, onSave }) => {
-  const { name, token } = botStruct;
+  const { name } = botStruct;
   return (
     <div className="key-card">
       <h4>{name}</h4>

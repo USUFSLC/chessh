@@ -74,7 +74,11 @@ export const ManPages = () => {
             <li>
               In the "Previous Games" viewer, use "m" to show the game's move
               history in UCI notation (which you may convert to PGN{" "}
-              <a href="https://www.dcode.fr/uci-chess-notation" target="_blank">
+              <a
+                href="https://www.dcode.fr/uci-chess-notation"
+                target="_blank"
+                rel="noreferrer"
+              >
                 here
               </a>
               ).
