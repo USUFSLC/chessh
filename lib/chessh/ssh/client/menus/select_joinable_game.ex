@@ -1,7 +1,8 @@
 defmodule Chessh.SSH.Client.SelectJoinableGame do
   alias Chessh.{Utils, Repo, Game, PlayerSession}
-  alias Chessh.SSH.Client.GameSelector
+  alias Chessh.SSH.Client.Selector
   import Ecto.Query
+  require Logger
 
   use Chessh.SSH.Client.SelectPaginatePoller
 
@@ -12,18 +13,20 @@ defmodule Chessh.SSH.Client.SelectJoinableGame do
   def dynamic_options(), do: true
 
   def get_player_joinable_games_with_id(player_id, current_id \\ nil, direction \\ :desc) do
-    GameSelector.paginate_ish_query(
+    Selector.paginate_ish_query(
       Game
       |> where([g], g.status == :continue)
       |> where(
         [g],
         (is_nil(g.dark_player_id) or is_nil(g.light_player_id)) and
-          (g.dark_player_id != ^player_id or g.light_player_id != ^player_id)
+          (g.dark_player_id != ^player_id or g.light_player_id != ^player_id) and
+          is_nil(g.bot_id)
       )
       |> limit(^max_displayed_options()),
       current_id,
       direction
     )
+    |> Repo.preload([:light_player, :dark_player, :bot])
   end
 
   def format_game_selection_tuple(%Game{id: game_id} = game) do
@@ -60,6 +63,8 @@ defmodule Chessh.SSH.Client.SelectJoinableGame do
   end
 
   def initial_options(%State{player_session: %PlayerSession{player_id: player_id}}) do
+    Logger.info(player_id)
+
     get_player_joinable_games_with_id(player_id)
     |> Enum.map(&format_game_selection_tuple/1)
   end
@@ -71,7 +76,7 @@ defmodule Chessh.SSH.Client.SelectJoinableGame do
     previous_last_game_id =
       case List.last(options) do
         {_label, id} -> id
-        _ -> 0
+        _ -> 1
       end
 
     current_screen_games =

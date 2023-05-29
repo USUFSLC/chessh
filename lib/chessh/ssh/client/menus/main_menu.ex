@@ -1,6 +1,5 @@
 defmodule Chessh.SSH.Client.MainMenu do
   alias IO.ANSI
-  alias Chessh.PlayerSession
 
   require Logger
 
@@ -22,9 +21,12 @@ defmodule Chessh.SSH.Client.MainMenu do
   def max_box_cols(), do: @logo_cols
   def title(), do: @logo ++ ["- Connected on: #{System.get_env("NODE_ID")}"]
 
-  def initial_options(%State{player_session: %PlayerSession{} = player_session}) do
+  def initial_options(%State{player_session: player_session}) do
     [
-      {"My Current Games",
+      {"Create Game",
+       {Chessh.SSH.Client.CreateGameMenu,
+        %Chessh.SSH.Client.SelectPaginatePoller.State{player_session: player_session}}},
+      {"Current Games",
        {Chessh.SSH.Client.SelectCurrentGame,
         %Chessh.SSH.Client.SelectPaginatePoller.State{player_session: player_session}}},
       {"Joinable Games (lobby)",
@@ -32,13 +34,7 @@ defmodule Chessh.SSH.Client.MainMenu do
         %Chessh.SSH.Client.SelectPaginatePoller.State{player_session: player_session}}},
       {"Previous Games",
        {Chessh.SSH.Client.SelectPreviousGame,
-        %Chessh.SSH.Client.SelectPaginatePoller.State{player_session: player_session}}},
-      {"Start A Game (Light)",
-       {Chessh.SSH.Client.Game,
-        %Chessh.SSH.Client.Game.State{player_session: player_session, color: :light}}},
-      {"Start A Game (Dark)",
-       {Chessh.SSH.Client.Game,
-        %Chessh.SSH.Client.Game.State{player_session: player_session, color: :dark}}}
+        %Chessh.SSH.Client.SelectPaginatePoller.State{player_session: player_session}}}
     ]
   end
 

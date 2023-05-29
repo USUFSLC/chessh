@@ -14,16 +14,14 @@ const minimizeKey = (key) => {
   return key;
 };
 
-const KeyCard = ({ onDelete, props }) => {
-  const { id, name, key } = props;
-
+const KeyCard = ({ onDelete, keyStruct: { id, name, key } }) => {
   const deleteThisKey = () => {
     if (
       window.confirm(
         "Are you sure? This will close all your currently opened ssh sessions."
       )
     ) {
-      fetch(`/api/keys/${id}`, {
+      fetch(`/api/player/keys/${id}`, {
         credentials: "same-origin",
         method: "DELETE",
       })
@@ -182,7 +180,7 @@ export const Keys = () => {
     }
   }, [userId, refreshKeys]);
 
-  if (!keys) return <p>Loading...</p>;
+  if (keys === null) return <p>Loading...</p>;
 
   if (Array.isArray(keys)) {
     return (
@@ -192,7 +190,7 @@ export const Keys = () => {
         <div className="key-card-collection">
           {keys.length ? (
             keys.map((key) => (
-              <KeyCard key={key.id} onDelete={refreshKeys} props={key} />
+              <KeyCard key={key.id} onDelete={refreshKeys} keyStruct={key} />
             ))
           ) : (
             <p>Looks like you've got no keys, try adding some!</p>

@@ -1,5 +1,5 @@
 defmodule Chessh.Web.Endpoint do
-  alias Chessh.{Player, Repo, Key, PlayerSession}
+  alias Chessh.{Player, Repo, Key, PlayerSession, Bot, Utils, Game}
   alias Chessh.Web.Token
   use Plug.Router
   import Ecto.Query
@@ -108,7 +108,7 @@ defmodule Chessh.Web.Endpoint do
     {status, body} =
       case conn.body_params do
         %{"key" => key, "name" => name} ->
-          if player_key_count > max_key_count do
+          if player_key_count >= max_key_count do
             {400, %{errors: "Player has reached threshold of #{max_key_count} keys."}}
           else
             case Key.changeset(%Key{player_id: player.id}, %{key: key, name: name})
@@ -164,7 +164,7 @@ defmodule Chessh.Web.Endpoint do
     |> send_resp(200, Jason.encode!(keys))
   end
 
-  delete "/keys/:id" do
+  delete "/player/keys/:id" do
     player = get_player_from_jwt(conn)
     PlayerSession.close_all_player_sessions(player)
 
@@ -191,6 +191,203 @@ defmodule Chessh.Web.Endpoint do
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(status, Jason.encode!(body))
+  end
+
+  get "/player/bots" do
+    player = get_player_from_jwt(conn)
+
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(
+      200,
+      Jason.encode!(Repo.all(from(b in Bot, where: b.player_id == ^player.id)))
+    )
+  end
+
+  put "/player/bots/:id" do
+    player = get_player_from_jwt(conn)
+    bot = Repo.get(Bot, conn.path_params["id"])
+
+    {status, body} =
+      if player.id != bot.player_id do
+        {403, %{errors: "Player cannot edit that bot."}}
+      else
+        case conn.body_params do
+          %{"webhook" => webhook, "name" => name, "public" => public} ->
+            case Bot.changeset(bot, %{webhook: webhook, name: name, public: public})
+                 |> Repo.update() do
+              {:ok, new_bot} ->
+                {200,
+                 %{
+                   success: true,
+                   bot: new_bot
+                 }}
+
+              {:error, %{valid?: false} = changeset} ->
+                {
+                  400,
+                  %{
+                    errors: format_errors(changeset)
+                  }
+                }
+            end
+
+          _ ->
+            {400, %{errors: "webhook, name, publicity must all be specified"}}
+        end
+      end
+
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(
+      status,
+      Jason.encode!(body)
+    )
+  end
+
+  get "/player/bots/:id/redrive" do
+    player = get_player_from_jwt(conn)
+    bot = Repo.get(Bot, conn.path_params["id"])
+
+    [bot_redrive_rate, bot_redrive_rate_ms] =
+      Application.get_env(:chessh, RateLimits)
+      |> Keyword.take([
+        :bot_redrive_rate,
+        :bot_redrive_rate_ms
+      ])
+      |> Keyword.values()
+
+    {status, body} =
+      if player.id == bot.player_id do
+        case Hammer.check_rate_inc(
+               :redis,
+               "bot-#{bot.id}-redrive",
+               bot_redrive_rate_ms,
+               bot_redrive_rate,
+               1
+             ) do
+          {:allow, _count} ->
+            spawn(fn -> Bot.redrive_games(bot) end)
+            {200, %{message: "redrive rescheduled"}}
+
+          {:deny, _} ->
+            {429,
+             %{
+               message:
+                 "can only redrive #{bot_redrive_rate} time(s) #{bot_redrive_rate_ms} milliseconds"
+             }}
+        end
+      else
+        {403, %{message: "you can't do that"}}
+      end
+
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(
+      status,
+      Jason.encode!(body)
+    )
+  end
+
+  post "/bots/games/:id/turn" do
+    token = conn.body_params["token"]
+    attempted_move = conn.body_params["attempted_move"]
+
+    bot = Repo.one(from(b in Bot, where: b.token == ^token))
+    game = Repo.get(Game, conn.path_params["id"])
+
+    {status, body} =
+      if game.bot_id == bot.id do
+        if (game.turn == :light && !game.light_player_id) ||
+             (game.turn == :dark && !game.dark_player_id) do
+          {:ok, binbo_pid} = :binbo.new_server()
+          :binbo.new_game(binbo_pid, game.fen)
+
+          case :binbo.move(binbo_pid, attempted_move) do
+            {:ok, status} ->
+              {:ok, fen} = :binbo.get_fen(binbo_pid)
+
+              {:ok, %Game{} = game} =
+                game
+                |> Game.update_with_status(attempted_move, fen, status)
+                |> Repo.update()
+
+              :syn.publish(:games, {:game, game.id}, {:new_move, attempted_move})
+
+              {200, %{message: "success"}}
+
+            _ ->
+              {400, %{message: "invalid move"}}
+          end
+        else
+          {400, %{message: "not the bot's turn"}}
+        end
+      else
+        {403, %{message: "unauthorized"}}
+      end
+
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(
+      status,
+      Jason.encode!(body)
+    )
+  end
+
+  post "/player/bots" do
+    player = get_player_from_jwt(conn)
+
+    player_bot_count =
+      Repo.aggregate(from(b in Bot, where: b.player_id == ^player.id), :count, :id)
+
+    max_bot_count = Application.get_env(:chessh, RateLimits)[:player_bots]
+    bot_token = Utils.random_token()
+
+    {status, body} =
+      case conn.body_params do
+        %{"webhook" => webhook, "name" => name, "public" => public} ->
+          if player_bot_count >= max_bot_count do
+            {400, %{errors: "Player has reached threshold of #{max_bot_count} bots."}}
+          else
+            case Bot.changeset(%Bot{player_id: player.id}, %{
+                   token: bot_token,
+                   webhook: webhook,
+                   name: name,
+                   public: public
+                 })
+                 |> Repo.insert() do
+              {:ok, new_bot} ->
+                {
+                  200,
+                  %{
+                    success: true,
+                    bot: new_bot
+                  }
+                }
+
+              {:error, %{valid?: false} = changeset} ->
+                {
+                  400,
+                  %{
+                    errors: format_errors(changeset)
+                  }
+                }
+            end
+          end
+
+        _ ->
+          {
+            400,
+            %{errors: "webhook, name, publicity must all be specified"}
+          }
+      end
+
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(
+      status,
+      Jason.encode!(body)
+    )
   end
 
   match _ do

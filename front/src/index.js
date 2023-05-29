@@ -7,6 +7,7 @@ import { Root } from "./root";
 import { Demo } from "./routes/demo";
 import { Home } from "./routes/home";
 import { Keys } from "./routes/keys";
+import { Bots } from "./routes/bots";
 import { ManPages } from "./routes/man_pages";
 import { Password } from "./routes/password";
 import { AuthSuccessful } from "./routes/auth_successful";
@@ -35,6 +36,10 @@ const router = createBrowserRouter([
       {
         path: "auth-successful",
         element: <AuthSuccessful />,
+      },
+      {
+        path: "bots",
+        element: <Bots />,
       },
       {
         path: "man-pages",
