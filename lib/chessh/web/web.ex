@@ -307,7 +307,7 @@ defmodule Chessh.Web.Endpoint do
             {:ok, status} ->
               {:ok, fen} = :binbo.get_fen(binbo_pid)
 
-              {:ok, %Game{status: after_move_status} = game} =
+              {:ok, %Game{} = game} =
                 game
                 |> Game.update_with_status(attempted_move, fen, status)
                 |> Repo.update()

@@ -353,7 +353,7 @@ defmodule Chessh.SSH.Client.Game do
          from,
          to,
          %State{
-           game: %Game{game_moves: game_moves, id: game_id, turn: turn},
+           game: %Game{id: game_id, turn: turn},
            binbo_pid: binbo_pid,
            flipped: flipped,
            color: turn
