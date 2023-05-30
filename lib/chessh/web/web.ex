@@ -312,6 +312,7 @@ defmodule Chessh.Web.Endpoint do
                 |> Game.update_with_status(attempted_move, fen, status)
                 |> Repo.update()
 
+              :syn.add_node_to_scopes([:games])
               :syn.publish(:games, {:game, game.id}, {:new_move, attempted_move})
 
               {200, %{message: "success"}}
