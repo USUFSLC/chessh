@@ -178,9 +178,7 @@ defmodule Chessh.SSH.Client.Game.Renderer do
              curr_x = div(col, tile_width)
              col_relative_to_tile = col - curr_x * tile_width
 
-             board_coord =
-               {if(!flipped, do: curr_y, else: @chess_board_height - curr_y - 1),
-                if(!flipped, do: curr_x, else: @chess_board_width - curr_x - 1)}
+             board_coord = if flipped, do: flip({curr_y, curr_x}), else: {curr_y, curr_x}
 
              {color, char} =
                case Map.fetch(board_coord_to_piece_art, board_coord) do
