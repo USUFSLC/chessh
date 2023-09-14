@@ -28,6 +28,7 @@ Do something among the lines of:
 ```bash
 git clone https://github.com/Simponic/chessh
 cd chessh
+asdf install
 
 cp .env.example .env
 vim .env # Fill it out mf

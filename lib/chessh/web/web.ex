@@ -26,13 +26,6 @@ defmodule Chessh.Web.Endpoint do
       redirect_uri
     ] = get_discord_configs()
 
-    Logger.warn(
-      inspect(
-        {String.to_charlist(discord_login_url), [], ~c"application/x-www-form-urlencoded",
-         ~c"scope=#{discord_scope}&client_id=#{client_id}&client_secret=#{client_secret}&code=#{req_token}&grant_type=authorization_code&redirect_uri=#{redirect_uri}"}
-      )
-    )
-
     resp =
       case conn.params do
         %{"code" => req_token} ->
@@ -473,7 +466,7 @@ defmodule Chessh.Web.Endpoint do
                []
              ) do
           {:ok, {{_, 200, ~c"OK"}, _, user_details}} ->
-            %{"username" => username, "discriminator" => discriminator, "id" => discord_id} =
+            %{"username" => username, "id" => discord_id} =
               Jason.decode!(String.Chars.to_string(user_details))
 
             case Repo.get_by(Player, discord_id: discord_id) do
@@ -481,8 +474,7 @@ defmodule Chessh.Web.Endpoint do
               player -> player
             end
             |> Player.discord_changeset(%{
-              username: username <> "#" <> discriminator,
-              discord_id: discord_id
+              username: username
             })
             |> Repo.insert_or_update()
 

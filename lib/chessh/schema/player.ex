@@ -43,6 +43,12 @@ defmodule Chessh.Player do
     |> validate_discord_id()
   end
 
+  def username_changeset(player, attrs) do
+    player
+    |> cast(attrs, [:username])
+    |> validate_username()
+  end
+
   def registration_changeset(player, attrs, opts \\ []) do
     player
     |> cast(attrs, [:username, :password, :discord_id])
@@ -85,7 +91,9 @@ defmodule Chessh.Player do
     changeset
     |> validate_required([:username])
     |> validate_length(:username, min: 2, max: 40)
-    |> validate_format(:username, ~r/^.{3,32}#[0-9]{4}$/, message: "must match discord tag format")
+    |> validate_format(:username, ~r/^.{3,32}(#[0-9]{4})?$/,
+      message: "must match discord tag format"
+    )
     |> unique_constraint(:username)
   end
 
