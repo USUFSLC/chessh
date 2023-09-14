@@ -26,17 +26,25 @@ defmodule Chessh.Web.Endpoint do
       redirect_uri
     ] = get_discord_configs()
 
+    Logger.warn(
+      inspect(
+        {String.to_charlist(discord_login_url), [], ~c"application/x-www-form-urlencoded",
+         ~c"scope=#{discord_scope}&client_id=#{client_id}&client_secret=#{client_secret}&code=#{req_token}&grant_type=authorization_code&redirect_uri=#{redirect_uri}"}
+      )
+    )
+
     resp =
       case conn.params do
         %{"code" => req_token} ->
           case :httpc.request(
                  :post,
-                 {String.to_charlist(discord_login_url), [], 'application/x-www-form-urlencoded',
-                  'scope=#{discord_scope}&client_id=#{client_id}&client_secret=#{client_secret}&code=#{req_token}&grant_type=authorization_code&redirect_uri=#{redirect_uri}'},
+                 {String.to_charlist(discord_login_url), [],
+                  ~c"application/x-www-form-urlencoded",
+                  ~c"scope=#{discord_scope}&client_id=#{client_id}&client_secret=#{client_secret}&code=#{req_token}&grant_type=authorization_code&redirect_uri=#{redirect_uri}"},
                  [],
                  []
                ) do
-            {:ok, {{_, 200, 'OK'}, _, resp}} ->
+            {:ok, {{_, 200, ~c"OK"}, _, resp}} ->
               Jason.decode!(String.Chars.to_string(resp))
           end
       end
@@ -442,7 +450,7 @@ defmodule Chessh.Web.Endpoint do
         conn
         |> put_resp_cookie("jwt", token)
         |> put_resp_header("location", client_redirect_location)
-        |> send_resp(301, '')
+        |> send_resp(301, ~c"")
 
       _ ->
         conn
@@ -458,13 +466,13 @@ defmodule Chessh.Web.Endpoint do
                :get,
                {String.to_charlist(discord_user_api_url),
                 [
-                  {'Authorization', String.to_charlist("Bearer #{access_token}")},
-                  {'User-Agent', discord_user_agent}
+                  {~c"Authorization", String.to_charlist("Bearer #{access_token}")},
+                  {~c"User-Agent", discord_user_agent}
                 ]},
                [],
                []
              ) do
-          {:ok, {{_, 200, 'OK'}, _, user_details}} ->
+          {:ok, {{_, 200, ~c"OK"}, _, user_details}} ->
             %{"username" => username, "discriminator" => discriminator, "id" => discord_id} =
               Jason.decode!(String.Chars.to_string(user_details))
 
