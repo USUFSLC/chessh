@@ -111,7 +111,7 @@ defmodule Chessh.SSH.Client do
         {:noreply, state}
 
       action ->
-        send(screen_pid, {:input, width, height, action})
+        send(screen_pid, {:input, width, height, action, data})
         {:noreply, state}
     end
   end
@@ -172,6 +172,7 @@ defmodule Chessh.SSH.Client do
       "\eOD" -> :left
       "\eOC" -> :right
       "\r" -> :return
+      "\d" -> :backspace
       x -> x
     end
   end

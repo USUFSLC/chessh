@@ -221,6 +221,7 @@ defmodule Chessh.SSH.Client.Game do
         _width,
         _height,
         action,
+        _data,
         %State{
           move_from: move_from,
           cursor: %{x: cursor_x, y: cursor_y} = cursor,

@@ -47,11 +47,12 @@ defmodule Chessh.SSH.Client.Game.PromotionScreen do
   def input(
         _,
         _,
-        action,
+        _,
+        data,
         %State{client_pid: client_pid, game_pid: game_pid, game_state: %Game.State{} = game_state} =
           state
       ) do
-    promotion = if Enum.member?(["q", "b", "n", "r"], action), do: action, else: nil
+    promotion = if Enum.member?(["q", "b", "n", "r"], data), do: data, else: nil
 
     if promotion do
       send(client_pid, {:go_back_one_screen, game_state})

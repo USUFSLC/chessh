@@ -119,6 +119,7 @@ defmodule Chessh.SSH.Client.SelectPaginatePoller do
             width,
             height,
             action,
+            _data,
             %State{
               client_pid: client_pid,
               options: options,

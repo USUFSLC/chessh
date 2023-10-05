@@ -57,6 +57,7 @@ defmodule Chessh.SSH.Client.PreviousGame do
         _width,
         _height,
         action,
+        _data,
         %State{
           move_idx: move_idx,
           flipped: flipped,
