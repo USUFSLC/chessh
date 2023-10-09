@@ -27,6 +27,8 @@ defmodule Chessh.SSH.Client.SelectPaginatePoller do
               options: [],
               tick: 0,
               cursor: nil,
+              width: 0,
+              height: 0,
               extra_info: %{}
   end
 
@@ -112,15 +114,15 @@ defmodule Chessh.SSH.Client.SelectPaginatePoller do
           {:send_to_ssh, render_state(width, height, state)}
         )
 
-        state
+        %State{state | width: width, height: height}
       end
 
       def input(
-            width,
-            height,
             action,
             _data,
             %State{
+              width: width,
+              height: height,
               client_pid: client_pid,
               options: options,
               selected_option_idx: selected_option_idx

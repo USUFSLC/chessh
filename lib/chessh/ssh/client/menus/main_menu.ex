@@ -35,7 +35,7 @@ defmodule Chessh.SSH.Client.MainMenu do
       {"Previous Games",
        {Chessh.SSH.Client.SelectPreviousGame,
         %Chessh.SSH.Client.SelectPaginatePoller.State{player_session: player_session}}},
-      {"TrongleChat",
+      {"ChatsSH",
        {Chessh.SSH.Client.TrongleChat,
         %Chessh.SSH.Client.TrongleChat.State{player_session: player_session}}}
     ]

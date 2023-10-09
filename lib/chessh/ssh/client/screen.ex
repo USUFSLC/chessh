@@ -1,8 +1,6 @@
 defmodule Chessh.SSH.Client.Screen do
   @callback render(width :: integer(), height :: integer(), state :: any()) :: any()
   @callback input(
-              width :: integer(),
-              height :: integer(),
               action :: any(),
               data :: String.t(),
               state :: any()
@@ -17,8 +15,8 @@ defmodule Chessh.SSH.Client.Screen do
       def handle_info({:render, width, height}, state),
         do: {:noreply, render(width, height, state)}
 
-      def handle_info({:input, width, height, action, data}, state),
-        do: {:noreply, input(width, height, action, data, state)}
+      def handle_info({:input, action, data}, state),
+        do: {:noreply, input(action, data, state)}
     end
   end
 end

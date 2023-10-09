@@ -45,9 +45,7 @@ defmodule Chessh.SSH.Client.Game.PromotionScreen do
   end
 
   def input(
-        _,
-        _,
-        _,
+        _action,
         data,
         %State{client_pid: client_pid, game_pid: game_pid, game_state: %Game.State{} = game_state} =
           state

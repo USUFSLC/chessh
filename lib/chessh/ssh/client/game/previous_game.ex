@@ -54,8 +54,6 @@ defmodule Chessh.SSH.Client.PreviousGame do
   end
 
   def input(
-        _width,
-        _height,
         action,
         _data,
         %State{

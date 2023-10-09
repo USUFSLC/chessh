@@ -94,8 +94,6 @@ defmodule Chessh.SSH.Client do
   def handle(
         {:data, data},
         %State{
-          width: width,
-          height: height,
           screen_pid: screen_pid,
           player_session: player_session
         } = state
@@ -111,7 +109,7 @@ defmodule Chessh.SSH.Client do
         {:noreply, state}
 
       action ->
-        send(screen_pid, {:input, width, height, action, data})
+        send(screen_pid, {:input, action, data})
         {:noreply, state}
     end
   end

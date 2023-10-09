@@ -218,8 +218,6 @@ defmodule Chessh.SSH.Client.Game do
   end
 
   def input(
-        _width,
-        _height,
         action,
         _data,
         %State{

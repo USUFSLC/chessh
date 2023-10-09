@@ -8,5 +8,5 @@ config :chessh, RateLimits,
   jail_timeout_ms: 5 * 60 * 1000,
   jail_attempt_threshold: 15,
   max_concurrent_user_sessions: 5,
-  player_session_message_burst_ms: 750,
+  player_session_message_burst_ms: 500,
   player_session_message_burst_rate: 8
