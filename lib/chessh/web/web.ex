@@ -392,6 +392,12 @@ defmodule Chessh.Web.Endpoint do
     )
   end
 
+  get "/health" do
+    conn
+    |> put_resp_content_type("text/plain")
+    |> send_resp(200, "healthy")
+  end
+
   match _ do
     send_resp(conn, 404, "Route undefined")
   end
