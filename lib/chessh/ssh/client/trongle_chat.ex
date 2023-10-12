@@ -96,7 +96,7 @@ defmodule Chessh.SSH.Client.TrongleChat do
           height: height
         } = state
       ) do
-    safe_char_regex = ~r/[A-Za-z0-9._~()'!*:@,;+?-]/
+    safe_char_regex = ~r/[ A-Za-z0-9._~()'!*:@,;+?-]/
 
     appended_message_state =
       case action do
