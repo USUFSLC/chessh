@@ -1,6 +1,7 @@
 import Modal from "react-modal";
 import { useAuthContext } from "../context/auth_context";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 Modal.setAppElement("#root");
 
@@ -60,6 +61,9 @@ const BotButton = ({ onSave, givenBot }) => {
 
   return (
     <div>
+      <ul>
+      <li>It is Highly Recommend to peek at <Link to="/man-pages">the man pages</Link>.</li>
+      </ul>
       <button className="button" onClick={() => setOpen(true)}>
         {givenBot ? "Update" : "+ Add"} Bot
       </button>
