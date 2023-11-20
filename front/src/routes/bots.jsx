@@ -61,12 +61,6 @@ const BotButton = ({ onSave, givenBot }) => {
 
   return (
     <div>
-      <ul>
-        <li>
-          It is Highly Recommend to peek at{" "}
-          <Link to="/man-pages">the man pages</Link>.
-        </li>
-      </ul>
       <button className="button" onClick={() => setOpen(true)}>
         {givenBot ? "Update" : "+ Add"} Bot
       </button>
@@ -185,6 +179,14 @@ export const Bots = () => {
   return (
     <>
       <h1>Bots</h1>
+      <div>
+        <ul>
+          <li>
+            It is Highly Recommend to peek at{" "}
+            <Link to="/man-pages">the man pages</Link>.
+          </li>
+        </ul>
+      </div>
       <BotButton onSave={refreshBots} />
 
       <div className="key-card-collection">
