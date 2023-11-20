@@ -291,7 +291,10 @@ defmodule Chessh.Web.Endpoint do
   end
 
   post "/bots/games/:id/turn" do
-    token = conn.body_params["token"]
+    token =
+      Enum.find_value(conn.req_headers, fn {header, value} ->
+        if header === "authorization", do: value
+      end)
     attempted_move = conn.body_params["attempted_move"]
 
     bot = Repo.one(from(b in Bot, where: b.token == ^token))
