@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 const botMoveRequestSchema = `GameUpdate {
   bot_id: number;
   bot_name: string;
