@@ -131,7 +131,7 @@ export const ManPages = () => {
               message to upon an update in a game it is playing. Upon a move, it
               will be immediately POST'd to with a single GameUpdate object, but
               when using the "redrive" feature (mostly for testing), an array of
-              game that correspond to games in which it is still the bot's turn:
+              GameUpdates that correspond to games in which it is still the bot's turn:
               <pre>{botMoveRequestSchema}</pre>
             </li>
             <li>
