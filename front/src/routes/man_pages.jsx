@@ -108,29 +108,37 @@ export const ManPages = () => {
         </div>
         <div>
           <ul>
-            <li>Goto <Link to="/bots">/bots</Link> and create a bot, taking note of the new bot's token (keep this private!).</li>
-            <li>Highly recommend <a
-                href="https://ngrok.io"
-                target="_blank"
-                rel="noreferrer"
-              >
-                ngrok
-              </a> for testing.</li>
-            <li>A "public" bot can be seen and played against by any player.</li>
-            <li>A "private" bot can be seen and played against by the player which created it.</li>
             <li>
-              A bot's "webhook" is the route that CheSSH will POST a
-              JSON message to upon an update in a game it is playing. Upon a move,
-              it will be immediately POST'd to with a single GameUpdate object, but 
-              when using the "redrive" feature (mostly for testing), an array of game that
-              correspond to games in which it is still the bot's turn:
+              Goto <Link to="/bots">/bots</Link> and create a bot, taking note
+              of the new bot's token (keep this private!).
+            </li>
+            <li>
+              Highly recommend{" "}
+              <a href="https://ngrok.io" target="_blank" rel="noreferrer">
+                ngrok
+              </a>{" "}
+              for testing.
+            </li>
+            <li>
+              A "public" bot can be seen and played against by any player.
+            </li>
+            <li>
+              A "private" bot can be seen and played against by the player which
+              created it.
+            </li>
+            <li>
+              A bot's "webhook" is the route that CheSSH will POST a JSON
+              message to upon an update in a game it is playing. Upon a move, it
+              will be immediately POST'd to with a single GameUpdate object, but
+              when using the "redrive" feature (mostly for testing), an array of
+              game that correspond to games in which it is still the bot's turn:
               <pre>{botMoveRequestSchema}</pre>
             </li>
             <li>
-              After receiving the update, the bot must "respond" with its attempted move,
-              with the plain token (no "Bearer" prefix) in its "Authorization" header, and
-              a body of (given "attempted_move" is the from space appended to the destination space i.e.
-              "e2e4"):
+              After receiving the update, the bot must "respond" with its
+              attempted move, with the plain token (no "Bearer" prefix) in its
+              "Authorization" header, and a body of (given "attempted_move" is
+              the from space appended to the destination space i.e. "e2e4"):
               <pre>{botMoveResponseSchema}</pre>
             </li>
             <li>

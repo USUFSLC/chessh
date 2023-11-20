@@ -62,7 +62,10 @@ const BotButton = ({ onSave, givenBot }) => {
   return (
     <div>
       <ul>
-      <li>It is Highly Recommend to peek at <Link to="/man-pages">the man pages</Link>.</li>
+        <li>
+          It is Highly Recommend to peek at{" "}
+          <Link to="/man-pages">the man pages</Link>.
+        </li>
       </ul>
       <button className="button" onClick={() => setOpen(true)}>
         {givenBot ? "Update" : "+ Add"} Bot
