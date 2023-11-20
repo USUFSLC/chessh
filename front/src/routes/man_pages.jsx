@@ -1,3 +1,18 @@
+const botMoveRequestSchema = `GameUpdate {
+  bot_id: number;
+  bot_name: string;
+  game_id: number;
+  fen: string;
+  turn: string;
+  bot_turn: boolean;
+  last_move: string;
+  status: string;
+}`;
+
+const botMoveResponseSchema = `BotMoveResponse {
+  attempted_message: string;
+}`;
+
 export const ManPages = () => {
   return (
     <div>
@@ -69,7 +84,6 @@ export const ManPages = () => {
               In the "Previous Games" viewer, use h/l or left/right to view the
               previous/next move.
             </li>
-
             <li>In a game board use "f" to flip the board.</li>
             <li>
               In the "Previous Games" viewer, use "m" to show the game's move
@@ -82,6 +96,50 @@ export const ManPages = () => {
                 here
               </a>
               ).
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div>
+        <div>
+          <b>BOTS & WEBHOOKS</b>
+        </div>
+        <div>
+          <ul>
+            <li>Goto <Link to="/bots">/bots</Link> and create a bot, taking note of the new bot's token (keep this private!).</li>
+            <li>Highly recommend <a
+                href="https://ngrok.io"
+                target="_blank"
+                rel="noreferrer"
+              >
+                ngrok
+              </a> for testing.</li>
+            <li>A "public" bot can be seen and played against by any player.</li>
+            <li>A "private" bot can be seen and played against by the player which created it.</li>
+            <li>
+              A bot's "webhook" is the route that CheSSH will POST a
+              JSON message to upon an update in a game it is playing. Upon a move,
+              it will be immediately POST'd to with a single GameUpdate object, but 
+              when using the "redrive" feature (mostly for testing), an array of game that
+              correspond to games in which it is still the bot's turn:
+              <pre>{botMoveRequestSchema}</pre>
+            </li>
+            <li>
+              After receiving the update, the bot must "respond" with its attempted move,
+              with the plain token (no "Bearer" prefix) in its "Authorization" header, and
+              a body of (given "attempted_move" is the from space appended to the destination space i.e.
+              "e2e4"):
+              <pre>{botMoveResponseSchema}</pre>
+            </li>
+            <li>
+              <a
+                href="https://github.com/Simponic/chessh_bot/blob/3748df9a58ff92b71980eda613d4ffe6aa8bda91/src/api/index.ts#L18-L55"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Here
+              </a>
+              is an example of how this logic should play out for a simple bot.
             </li>
           </ul>
         </div>
